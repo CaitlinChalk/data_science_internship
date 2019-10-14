@@ -6,12 +6,13 @@ raw data structure:
 
 import pandas as pd
 import numpy as np
+from convert_PFs import convert_PFs #function to convert structured data to RUMM format
 
 data = pd.read_excel('../data/raw/Saudi_data.xlsx') #read raw data
 
 #replace NaN with -1
 #data.fillna(-1)
-data.replace(np.nan,-1,inplace=True)
+#data.replace(np.nan,-999,inplace=True) #replace NaNs with -999
 #separate raw data into different components 
 #------------------------------------------------------------------------------
 
@@ -85,6 +86,9 @@ person_factors = person_factors.drop(columns="Household Income US$")
 attitudes_and_opinions = pd.concat([attitudes, laundry_opinions], axis=1, sort=False) #concatenates horizontally
 del [attitudes, laundry_opinions]
 
+#store original values
+#PFs_original = person_factors.copy() #store original values
+
 #%% restructure for Rasch analysis
 #Rasch input file structure: id, facets, PFs, items
 #------------------------------------------------------------------------------
@@ -100,12 +104,18 @@ for i in range(len(facet_list)):
     
 #%% person factors
    
-age_list = np.unique(person_factors.loc[:,"Age Of Respondent (ageres)"])
+#age_list = np.unique(person_factors.loc[:,"Age Of Respondent (ageres)"])
+#age = person_factors.loc[:,"Age Of Respondent (ageres)"]   
+#age_dict = {}
+#for i in range(len(age_list)):
+#    age_dict[i] = {age_list[i]: i}
+#    age.replace(age_dict[i], inplace=True)
     
-
-# to do: REMOVE NANS FIRST
-
-
+#%%    
+PFs_RUMM = person_factors.copy() 
+convert_PFs(person_factors, PFs_RUMM) #function to convert PF data into RUMM format
+PFs_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
+PFs_RUMM = PFs_RUMM.astype(int)
 
 
 
