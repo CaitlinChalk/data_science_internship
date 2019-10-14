@@ -20,7 +20,10 @@ def convert_PFs (PFs_old,PFs_new):
         for i in range(len(PF_list)):
             PF_dict[i] = {PF_list[i]: i}
             PFs_new.loc[:,PF_names[j]].replace(PF_dict[i], inplace=True)
-        #PFs_new.loc[:,PF_names[j]] = PFs_new.loc[:,PF_names[j]].astype(int)
 
-    #return PFs_new
-    
+def convert_facets (facets_old,facets_new)
+    facet_list = np.unique(facets_old) #count number of distinct facets
+    facet_dict = {}
+    for i in range(len(facet_list)):
+        facets_dict[i] = {facet_list[i]: i}
+        facets_new.replace(facet_dict[i], inplace=True)    
