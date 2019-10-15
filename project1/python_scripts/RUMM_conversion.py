@@ -33,6 +33,6 @@ def convert2RUMM (data_old,data_RUMM):
             for i in range(len(response_list)):
                 response_dict[response_list[i]] = i #create dictionary to redefine responses as integers
         
-            data_RUMM.loc[:,j].replace(response_dict, inplace=True) #replace responses in data frame column with the corresponding integers
+            data_RUMM.iloc[:,j].replace(response_dict, inplace=True) #replace responses in data frame column with the corresponding integers
             
 #To do: generalise incase missing data isn't represented by NaN

@@ -6,13 +6,11 @@ raw data structure:
 
 import pandas as pd
 import numpy as np
-from convert_PFs import convert_PFs #function to convert structured data to RUMM format
+from RUMM_conversion import convert2RUMM #function to convert structured data to RUMM format
+from data_manipulation import remove_text
 
 data = pd.read_excel('../data/raw/Saudi_data.xlsx') #read raw data
 
-#replace NaN with -1
-#data.fillna(-1)
-#data.replace(np.nan,-999,inplace=True) #replace NaNs with -999
 #separate raw data into different components 
 #------------------------------------------------------------------------------
 
@@ -90,32 +88,38 @@ del [attitudes, laundry_opinions]
 #PFs_original = person_factors.copy() #store original values
 
 #%% restructure for Rasch analysis
-#Rasch input file structure: id, facets, PFs, items
-#------------------------------------------------------------------------------
+#facets
 
-facet_list = np.unique(usual_brand) #count number of distinct laundry brands
-
-#create dictionary for facets, and replace brands with integers 
-facets = usual_brand
-facet_dict = {}
-for i in range(len(facet_list)):
-    facet_dict[i] = {facet_list[i]: i}
-    facets.replace(facet_dict[i], inplace=True)
+facets_RUMM = usual_brand.copy()
+convert2RUMM(usual_brand,facets_RUMM)
+facets_RUMM = facets_RUMM.astype(int)
     
 #%% person factors
-   
-#age_list = np.unique(person_factors.loc[:,"Age Of Respondent (ageres)"])
-#age = person_factors.loc[:,"Age Of Respondent (ageres)"]   
-#age_dict = {}
-#for i in range(len(age_list)):
-#    age_dict[i] = {age_list[i]: i}
-#    age.replace(age_dict[i], inplace=True)
-    
-#%%    
+      
 PFs_RUMM = person_factors.copy() 
-convert_PFs(person_factors, PFs_RUMM) #function to convert PF data into RUMM format
+convert2RUMM(person_factors, PFs_RUMM) #function to convert PF data into RUMM format
 PFs_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 PFs_RUMM = PFs_RUMM.astype(int)
+
+#%% items
+#in these data, item responses include text, as well as a digit score
+#2 options:
+#1. remove the text and order the item responses according to the remaining numbers
+#2. manually define the item response orders from low to high, i.e. create dictionary by hand
+
+#option 1:
+#agreements
+agreements_digits = agreements.copy() #copy original data
+remove_text(agreements,agreements_digits) #remove all text
+agreements_RUMM = agreements_digits.copy() #copy digitised data 
+convert2RUMM(agreements_digits,agreements_RUMM) #convert to RUMM format
+
+#ratings
+ratings_digits = ratings.copy() #copy original data
+remove_text(ratings,ratings_digits) #remove all text
+ratings_RUMM = ratings_digits.copy() #copy digitised data 
+convert2RUMM(ratings_digits,ratings_RUMM) #convert to RUMM format
+
 
 
 
