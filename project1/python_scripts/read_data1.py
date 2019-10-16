@@ -90,16 +90,14 @@ del [attitudes, laundry_opinions]
 #%% restructure for Rasch analysis
 #facets
 
-facets_RUMM = usual_brand.copy()
-facets_key = convert2RUMM(usual_brand,facets_RUMM)
-facets_RUMM = facets_RUMM.astype(int)
+facets_RUMM, facets_key = convert2RUMM(usual_brand,0) #function to convert data into RUMM format, outputs replacement key
+facets_RUMM = facets_RUMM.astype(int) #ensure all values are integers (1 as opposed to 1.0 for example)
     
 #%% person factors
       
-PFs_RUMM = person_factors.copy() 
-PFs_key = convert2RUMM(person_factors, PFs_RUMM) #function to convert PF data into RUMM format
+PFs_RUMM, PFs_key = convert2RUMM(person_factors,0) #function to convert PF data into RUMM format
 PFs_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
-PFs_RUMM = PFs_RUMM.astype(int)
+PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
 #%% items
 #in these data, item responses include text, as well as a digit score
@@ -109,22 +107,37 @@ PFs_RUMM = PFs_RUMM.astype(int)
 
 #option 1:
 #agreements
-agreements_digits = agreements.copy() #copy original data
-remove_text(agreements,agreements_digits) #remove all text
-agreements_RUMM = agreements_digits.copy() #copy digitised data 
-convert2RUMM(agreements_digits,agreements_RUMM) #convert to RUMM format
+#agreements_digits = agreements.copy() #copy original data
+#remove_text(agreements,agreements_digits) #remove all text
+
+#%%
+agreements_RUMM, agreements_key = convert2RUMM(agreements,1) #convert to RUMM format
+agreements_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
+agreements_RUMM = agreements_RUMM.astype(int) #ensure integer values
 
 #ratings
-ratings_digits = ratings.copy() #copy original data
-remove_text(ratings,ratings_digits) #remove all text
-ratings_RUMM = ratings_digits.copy() #copy digitised data 
-convert2RUMM(ratings_digits,ratings_RUMM) #convert to RUMM format
+ratings_RUMM, ratings_key = convert2RUMM(ratings,1) #convert to RUMM format
+ratings_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
+ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
+#%% output final data set
 
+#concatenate data - in this case with separate ratings and agreements
 
+RUMM_ratings = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, ratings_RUMM], axis=1)
+RUMM_agreements = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, agreements_RUMM], axis=1)
 
+RUMM_ratings_key = pd.concat([facets_key, PFs_key, ratings_key], axis=1) 
+RUMM_agreements_key = pd.concat([facets_key, PFs_key, agreements_key], axis=1) 
 
+#write data and corresponding key to excel worksheet
 
+with pd.ExcelWriter("Saudi_ratings.xlsx") as writer:
+    RUMM_ratings.to_excel(writer, sheet_name = 'data', index=None, header=False)
+    RUMM_ratings_key.to_excel(writer, sheet_name = 'key')
 
+with pd.ExcelWriter("Saudi_agreements.xlsx") as writer:
+    RUMM_agreements.to_excel(writer, sheet_name = 'data', index=None, header=False)
+    RUMM_agreements_key.to_excel(writer, sheet_name = 'key')
 
 
 
