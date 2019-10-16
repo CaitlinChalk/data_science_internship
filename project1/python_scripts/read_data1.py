@@ -91,13 +91,13 @@ del [attitudes, laundry_opinions]
 #facets
 
 facets_RUMM = usual_brand.copy()
-convert2RUMM(usual_brand,facets_RUMM)
+facets_key = convert2RUMM(usual_brand,facets_RUMM)
 facets_RUMM = facets_RUMM.astype(int)
     
 #%% person factors
       
 PFs_RUMM = person_factors.copy() 
-convert2RUMM(person_factors, PFs_RUMM) #function to convert PF data into RUMM format
+PFs_key = convert2RUMM(person_factors, PFs_RUMM) #function to convert PF data into RUMM format
 PFs_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 PFs_RUMM = PFs_RUMM.astype(int)
 
