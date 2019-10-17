@@ -39,8 +39,9 @@ for i in range(len(dependencies.columns)):
             val = col1.iloc[j]
             col2 = dependencies.iloc[:,int(val-1)]
             next_row = col2.notna().idxmin()
-            dependencies.iloc[int(next_row),int(val)] = i
+            dependencies.iloc[int(next_row),int(val-1)] = i+1
 
+#ADD LINE TO CHECK IF NUMBER ISN'T ALREADY IN!!
 
 #j = SERIES.notna().idxmin()
 
