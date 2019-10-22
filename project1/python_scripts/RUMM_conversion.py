@@ -39,8 +39,7 @@ def convert2RUMM (data_old,id1):
             if id1 == 0: #when no text has been removed  
                 response_key[i] = response_list[i]  + ' ' + '(' + str(counts[i]) + ')' 
             else: #if text was removed, use the original responses in the output key
-                response_key[i] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
-                
+                response_key[i,1] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
         data_RUMM.replace(response_dict, inplace=True) #replace responses in series with the corresponding integers
         output_key  = pd.Series(response_key, name=data_old.name) #Series containing key for replaced responses
         
