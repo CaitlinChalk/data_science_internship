@@ -10,12 +10,14 @@ for multi-facet analysis, specify the facet of interest
 import pandas as pd
 import numpy as np
 
-data = pd.read_csv('../data/Data1_saudi/residuals_analysis1.csv') #read raw data (use read_csv or read_excel accordingly)
+data = pd.read_excel('../data/Data1_saudi/residuals_analysis_usual_brands.xlsx') #read raw data (use read_csv or read_excel accordingly)
 
-n_items = 18 #number of items
+n_items = 6 #number of items
 n_facets = 10 #number of facets
 
-res_facet1 = data.iloc[0:n_items,1:n_items+1] #matrix of item correlation resididuals
+facet = 2 #facet of interest
+
+res_facet1 = data.iloc[(facet-1)*n_items:facet*n_items,1+(facet-1)*n_items:1+facet*n_items] #matrix of item correlation resididuals
 res_facet1 = res_facet1.astype(float) #convert to float
 res_facet1.replace(np.diagonal(res_facet1),np.nan, inplace=True) #replace matrix diagonals (which correspond to items residual with itself) to NaN
 av_res = np.nanmean(res_facet1) #average residual value excluding NaNs
@@ -33,7 +35,7 @@ for i in range(n_items): #loop through each item
     else:
         dependent_items = pd.concat([dependent_items,Series1],axis=1) 
         
-# add dependent items to both columns in dataframe (e.g. if item 1 (column 1) has dependence on item 2 (column 2), add item 1 to the column for item 2)  
+#%% add dependent items to both columns in dataframe (e.g. if item 1 (column 1) has dependence on item 2 (column 2), add item 1 to the column for item 2)  
 for i in range(n_items): #each column = number of items
     col1 = dependent_items.loc[:,i]
     x = col1.notna().sum() #number of non-NaN values in column 1
