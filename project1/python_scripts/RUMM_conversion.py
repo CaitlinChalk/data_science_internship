@@ -3,19 +3,20 @@
 Created on Mon Oct 14 10:12:25 2019
 
 @author: matcc
-function to convert structured data into format required for RUMM input
-Ignores NaN responses - modification is required when missing data is referred to by something other than NaN 
-INPUT: 1) data_old - questionnaire style data frame, organised into columns
-        2) id1 - id1 = 1: corresponds to responses with text and numbers (e.g. excellent 5). In this case, the 'remove_text' 
-                    function is applied to remove all text from each response (e.g. leaving 5 only)
-                id1 = 0: remove_text is not called
-RETURNS: 1) data_RUMM - data in format for RUMM software - each response labelled in unit intervals, starting from 0
-         2) output_key - key to define replaced responses, with the quantity of each response (in brackets)
-
-NOTE: if data is organised into statements with corresponding numbers, run the "remove_text" function first
-if data consists of text only, and the item order is important, this function should be modifed to allow for manual ordering of items
+#converts structured data into format required for RUMM input
+Contains: convert2RUMM
 """
 
+#Ignores NaN responses - modification is required when missing data is referred to by something other than NaN 
+#INPUT: 1) data_old - questionnaire style data frame, organised into columns
+#       2) id1 - id1 = 1: corresponds to responses with text and numbers (e.g. excellent 5). In this case, the 'remove_text' 
+#                    function is applied to remove all text from each response (e.g. leaving 5 only)
+#                id1 = 0: remove_text is not called
+#RETURNS: 1) data_RUMM - data in format for RUMM software - each response labelled in unit intervals, starting from 0
+#         2) output_key - key to define replaced responses, with the quantity of each response (in brackets)
+
+#NOTE: if data is organised into statements with corresponding numbers, run the "remove_text" function first
+#if data consists of text only, and the item order is important, this function should be modifed to allow for manual ordering of items
 import numpy as np
 import pandas as pd
 from data_manipulation import remove_text
@@ -44,7 +45,7 @@ def convert2RUMM (data_old,id1):
             quantity[i] = str(counts[i])
         data_RUMM.replace(response_dict, inplace=True) #replace responses in series with the corresponding integers
         output_key  = pd.Series(response_key, name=data_old.name) #Series containing key for replaced responses
-        output_key = pd.concat([output_key, pd.Series(quantity, name=data_old.name)],axis=1)
+        output_key = pd.concat([output_key, pd.Series(quantity, name='Quantity')],axis=1)
     else:  #data frame         
         for j in range(len(data_RUMM.columns)): #loop through all columns in data
             if id1 == 1:            
@@ -71,8 +72,12 @@ def convert2RUMM (data_old,id1):
                 output_key = pd.concat([output_key,Series0], axis=1) #concatenate each series into one data frame, containing key for each replacement
         
     return data_RUMM, output_key
-            
+
 #To do: generalise incase missing data isn't represented by NaN.
 #The following code could be used to replace digits (999 in this example), but it doesn't seem to work when trying to replace NaNs
 #response_list = np.delete(response_list0, np.argwhere(response_list0 == 999))
 #counts = np.delete(counts, np.argwhere(response_list0 == 999))
+
+
+
+            
