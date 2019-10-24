@@ -4,7 +4,7 @@ Created on Mon Oct 14 14:27:57 2019
 
 @author: matcc
 script containing functions to manipulate data
-contains: remove_text, remove_extremes
+contains: remove_text, remove_extremes, ammend_facet_key
 """
 
 #function calls
@@ -57,6 +57,25 @@ def remove_extremes(data,id1):
             
     return data_new, extreme_info
             
-            
+#function to ammend facet quantities (with extremes removed) 
+#INPUT: old facet list, old facet key, IDs of extreme persons
+#OUTPUT: new facet key with ammended quantities with extreme persons removed
+def ammend_facet_key(facets_old,key,ID): 
+    key_new = key.copy()
+    extrm_facets = facets_old.iloc[ID.values-1] #facets associated with extreme people
+#******** N.B. in this case, the person IDs range from 1-999, and the facets were ordered accordingly (from 0-998). 
+#The line of code above will need ammending if this isn't the case ********
+    extrm_facet_list = np.unique(extrm_facets, return_counts=True)[0] #list of distinct facets (corresponding to extreme persons)
+    extrm_facet_count = np.unique(extrm_facets, return_counts=True)[1] #number of each extreme person
+    extreme_facet_out = {} #initialise key for output information
+    col_name = key.columns[1] #second column of key = original facet quantity
+    for i in range(len(extrm_facet_list)):
+        facet = extrm_facet_list[i] #facet associated with extreme person
+        n_removes = extrm_facet_count[i] #number of extreme persons the facet is associated with
+        old_value = key_new.loc[facet,col_name] #original facet quantity
+        key_new.replace({key_new.loc[facet,col_name]:int(old_value)-n_removes}, inplace=True) #reduce original quantity by number of extreme persons
+        extreme_facet_out['Facet '+str(facet+1)] = str(n_removes) + ' removed' #output information
+        
+    return key_new, extreme_facet_out            
 
     
