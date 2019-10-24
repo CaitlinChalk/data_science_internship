@@ -33,16 +33,18 @@ def convert2RUMM (data_old,id1):
         counts = counts[~pd.isnull(response_list0)] #removing counts corresponding to NaN responses
         response_dict = {} #initialise dictionary to replace responses with integers
         response_key = {} #initialise dictionary to define the key for each replacement 
+        quantity = {} #dictionary to store quantity of each replaced reponse (outputs in a separate column when input data has 1 dimesnion)
         for i in range(len(response_list)):
             response_dict[response_list[i]] = i #create dictionary to redefine responses as integers
             #create key for reference: contains response and quantity of each
             if id1 == 0: #when no text has been removed  
                 response_key[i] = response_list[i]  + ' ' + '(' + str(counts[i]) + ')' 
             else: #if text was removed, use the original responses in the output key
-                response_key[i,1] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
+                response_key[i] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
+            quantity[i] = str(counts[i])
         data_RUMM.replace(response_dict, inplace=True) #replace responses in series with the corresponding integers
         output_key  = pd.Series(response_key, name=data_old.name) #Series containing key for replaced responses
-        
+        output_key = pd.concat([output_key, pd.Series(quantity, name=data_old.name)],axis=1)
     else:  #data frame         
         for j in range(len(data_RUMM.columns)): #loop through all columns in data
             if id1 == 1:            
