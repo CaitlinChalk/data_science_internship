@@ -107,20 +107,39 @@ ratings_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
 #%% remove extreme scores (i.e. people that put the same answer for everything)
 
-ratings_RUMM2, extreme_persons = remove_extremes(ratings_RUMM,id1)
+#ratings_RUMM2, extreme_persons = remove_extremes(ratings_RUMM,id1)
+
+#%% consider a subset of facets only
+
+facets_of_interest = [8] #list of facets of interest
+if len(facets_of_interest) < len(facets_key): #if some facets have been removed
+    facet_select = facets_RUMM.isin(facets_of_interest) #series of selected facets
+    facet_index = facet_select[facet_select==True].index #index of facets of interest
+    #trim data files so they only include facets of interest
+    id1 = id1.iloc[facet_index] 
+    facets_RUMM = facets_RUMM.iloc[facet_index] 
+    PFs_RUMM = PFs_RUMM.iloc[facet_index,:]
+    agreements_RUMM = agreements_RUMM.iloc[facet_index] 
+    ratings_RUMM = ratings_RUMM.iloc[facet_index] 
 
 
 
 #%% output final data set
 
 #concatenate data - in this case with separate ratings and agreements
+    
+if len(facets_of_interest) > 1: #multifacet analysis
+    RUMM_ratings = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, ratings_RUMM], axis=1)
+    RUMM_agreements = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, agreements_RUMM], axis=1)
 
-RUMM_ratings = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, ratings_RUMM], axis=1)
-RUMM_agreements = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, agreements_RUMM], axis=1)
+    RUMM_ratings_key = pd.concat([facets_key, PFs_key, ratings_key], axis=1) 
+    RUMM_agreements_key = pd.concat([facets_key, PFs_key, agreements_key], axis=1) 
+else: #single facet analysis
+    RUMM_ratings = pd.concat([id1, PFs_RUMM, ratings_RUMM], axis=1)
+    RUMM_agreements = pd.concat([id1, PFs_RUMM, agreements_RUMM], axis=1)
 
-RUMM_ratings_key = pd.concat([facets_key, PFs_key, ratings_key], axis=1) 
-RUMM_agreements_key = pd.concat([facets_key, PFs_key, agreements_key], axis=1) 
-
+    RUMM_ratings_key = pd.concat([PFs_key, ratings_key], axis=1) 
+    RUMM_agreements_key = pd.concat([PFs_key, agreements_key], axis=1)
 #write data and corresponding key to excel worksheet
 
 with pd.ExcelWriter("Saudi_ratings.xlsx") as writer:
