@@ -37,25 +37,32 @@ def remove_text(data):
 #Note - these persons can't be placed on the Rasch analysis scale
 #INPUT: data for removal of extreme persons, and corresponding identifiers for each person
 #RETURN: data with removed extremes, list of extreme person IDs with their corresponding selected score (for all questions) 
-def remove_extremes(data,id1):
+def remove_extremes(data,id1,PFs):
     data_new = data.copy() #copy old data to new 
+    id_new = id1.copy()
+    PFs_new = PFs.copy()
     #initialise extreme_info
     cols = {'Extreme person ID', 'test ID', 'Selected score'}
     extreme_info = pd.DataFrame([],columns=cols)
+    k=-1
     for i in range(len(data)):
+        k=k+1
         row = data.iloc[i,:] #each row corresponds to each person
         min1 = min(data.min(axis=1)) #minimum value 
         max1 = max(data.max(axis=1)) #maximum value
         if len(set(row)) == 1: #if row contains only one element
-            if row[0] == min1 or row[0] == max1:  #if selected element is an extreme (either a min or max)              
-                data_new.drop(i, axis=0, inplace=True) #delete that row from data new
-                person = id1[i]
-                id2 = i+1
-                value = row[0]
-                Data0 = pd.DataFrame([[person,id2,value]],columns=cols)
-                extreme_info = extreme_info.append(Data0, ignore_index=True)
+           if row.iloc[0] == min1 or row.iloc[0] == max1:  #if selected element is an extreme (either a min or max)              
+               data_new.drop(data_new.index[k], axis=0, inplace=True) #delete that row from data_new
+               id_new.drop(id_new.index[k], axis=0, inplace=True) #delete corresponding person from id_new
+               PFs_new.drop(PFs_new.index[k], axis=0, inplace=True)
+               k=k-1 #reduce index because one row has been deleted in data_new
+               person = id1.iloc[i]
+               id2 = i+1
+               value = row.iloc[0]
+               Data0 = pd.DataFrame([[person,id2,value]],columns=cols)
+               extreme_info = extreme_info.append(Data0, ignore_index=True)
             
-    return data_new, extreme_info
+    return data_new, id_new, PFs_new, extreme_info
             
 #function to ammend facet quantities (with extremes removed) 
 #INPUT: old facet list, old facet key, IDs of extreme persons
