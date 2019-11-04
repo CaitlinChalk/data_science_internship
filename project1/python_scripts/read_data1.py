@@ -88,30 +88,28 @@ attitudes_and_opinions = pd.concat([attitudes, usual_ratings], axis=1, sort=Fals
 facets_RUMM, facets_key = convert2RUMM(usual_brand,0) #function to convert data into RUMM format, outputs replacement key
 facets_RUMM = facets_RUMM.astype(int) #ensure all values are integers (1 as opposed to 1.0 for example)
     
-#%% person factors
+# person factors
       
 PFs_RUMM, PFs_key = convert2RUMM(person_factors,0) #function to convert PF data into RUMM format
 PFs_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
-#%% items
+# items
 
 agreements_RUMM, agreements_key = convert2RUMM(agreements,1) #convert to RUMM format
 agreements_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 agreements_RUMM = agreements_RUMM.astype(int) #ensure integer values
 
-#%%ratings
+# ratings
 
-ratings_RUMM, ratings_key = convert2RUMM(usual_ratings,1) #convert to RUMM format
+ratings_RUMM, ratings_key = convert2RUMM(ratings,1) #convert to RUMM format
 ratings_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
-#%% remove extreme scores (i.e. people that put the same answer for everything)
 
-#ratings_RUMM2, extreme_persons = remove_extremes(ratings_RUMM,id1)
 
 #%% consider a subset of facets only
 
-facets_of_interest = [8] #list of facets of interest
+facets_of_interest = [0] #list of facets of interest
 if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     facet_select = facets_RUMM.isin(facets_of_interest) #series of selected facets
     facet_index = facet_select[facet_select==True].index #index of facets of interest
@@ -122,6 +120,15 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     agreements_RUMM = agreements_RUMM.iloc[facet_index] 
     ratings_RUMM = ratings_RUMM.iloc[facet_index] 
 
+#%% remove extreme scores (i.e. people that put the same answer for everything)
+extremes = True
+
+if extremes:
+    ratings_RUMM2, id2, PFs_RUMM2, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM)
+else:
+    ratings_RUMM2 = ratings_RUMM.copy()
+    PFs_RUMM2 = PFs_RUMM.copy()
+    id2 = id1.copy()
 
 
 #%% output final data set
