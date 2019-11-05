@@ -108,8 +108,8 @@ ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
 
 
 #%% consider a subset of facets only
-
-facets_of_interest = [0] #list of facets of interest
+combination = True
+facets_of_interest = [0,1,2,3,4,5,6,7,8,9] #list of facets of interest
 if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     facet_select = facets_RUMM.isin(facets_of_interest) #series of selected facets
     facet_index = facet_select[facet_select==True].index #index of facets of interest
@@ -124,18 +124,14 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
 extremes = True
 
 if extremes:
-    ratings_RUMM2, id2, PFs_RUMM2, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM)
-else:
-    ratings_RUMM2 = ratings_RUMM.copy()
-    PFs_RUMM2 = PFs_RUMM.copy()
-    id2 = id1.copy()
+    ratings_RUMM, id1, PFs_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM)
 
 
 #%% output final data set
 
 #concatenate data - in this case with separate ratings and agreements
     
-if len(facets_of_interest) > 1: #multifacet analysis
+if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     RUMM_ratings = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, ratings_RUMM], axis=1)
     RUMM_agreements = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, agreements_RUMM], axis=1)
 
