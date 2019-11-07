@@ -82,7 +82,7 @@ attitudes_and_opinions = pd.concat([attitudes, usual_ratings], axis=1, sort=Fals
 #store original values
 #PFs_original = person_factors.copy() #store original values
 
-#%% restructure for Rasch analysis
+#% restructure for Rasch analysis
 #facets
 
 facets_RUMM, facets_key = convert2RUMM(usual_brand,0) #function to convert data into RUMM format, outputs replacement key
@@ -107,7 +107,7 @@ ratings_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
 
 
-#%% consider a subset of facets only
+#% consider a subset of facets only
 combination = True
 facets_of_interest = [0,1,2,3,4,5,6,7,8,9] #list of facets of interest
 if len(facets_of_interest) < len(facets_key): #if some facets have been removed
@@ -120,12 +120,34 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     agreements_RUMM = agreements_RUMM.iloc[facet_index] 
     ratings_RUMM = ratings_RUMM.iloc[facet_index] 
 
+#%%
+
+misfit_ID = []
+
+misfits = False #true if ID of misfitting people is included, to remove from the analysis
+
+if misfits:
+
+    persons = pd.read_excel('../Rasch_analysis/Data1_saudi/combined_persons.xlsx') #individual person fit data
+    misfits1 = persons.loc[:,'Extm'][persons.loc[:,'Extm']=='extm'] 
+    misfit_ID1 = persons.loc[misfits1.index,'personID']
+
+    persons = persons[persons.loc[:,'Extm']!='extm' ] #remove extremes
+    misfits2 = persons.loc[:,'FitResid'][abs(persons.loc[:,'FitResid'])>2.5]
+    misfit_ID2 = persons.loc[misfits2.index,'personID']
+
+    misfit_ID = misfit_ID1.append(misfit_ID2)
+
 #%% remove extreme scores (i.e. people that put the same answer for everything)
 extremes = True
+combination = True
 
 if extremes:
-    ratings_RUMM, id1, PFs_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM)
-
+    ratings_RUMM, id1, PFs_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM,misfit_ID)
+    
+#if selection:
+ #   id1 = id1[id1==misfit_ID]
+    #ratings_RUMM, id1, PFs_RUMM, extreme_persons = select_data(ratings_RUMM,id1,PFs_RUMM,misfit_ID)
 
 #%% output final data set
 

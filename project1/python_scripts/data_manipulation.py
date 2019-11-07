@@ -36,8 +36,9 @@ def remove_text(data):
 #function to remove extreme data, defined as the persons who select the same answer at the extreme end (i.e. all 5s or all 0s) for all options
 #Note - these persons can't be placed on the Rasch analysis scale
 #INPUT: data for removal of extreme persons, and corresponding identifiers for each person
+    #option argument - persons: an additional list of people to remove from the data. If it isn't provided, no extra people are removed
 #RETURN: data with removed extremes, list of extreme person IDs with their corresponding selected score (for all questions) 
-def remove_extremes(data,id1,PFs):
+def remove_extremes(data,id1,PFs,persons = []):
     data_new = data.copy() #copy old data to new 
     id_new = id1.copy()
     PFs_new = PFs.copy()
@@ -61,7 +62,11 @@ def remove_extremes(data,id1,PFs):
                value = row.iloc[0]
                Data0 = pd.DataFrame([[person,id2,value]],columns=cols)
                extreme_info = extreme_info.append(Data0, ignore_index=True)
-            
+    person_index = id1.isin(persons)[id1.isin(persons)==True].index #index of extra persons to be removed (if the argument is passed)
+    data_new.drop(person_index, axis=0, inplace=True)
+    id_new.drop(person_index, axis=0, inplace=True)
+    PFs_new.drop(person_index, axis=0, inplace=True)
+    
     return data_new, id_new, PFs_new, extreme_info
             
 #function to ammend facet quantities (with extremes removed) 
