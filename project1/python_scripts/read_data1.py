@@ -10,7 +10,7 @@ from RUMM_conversion import convert2RUMM #function to convert structured data to
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
 
-data = pd.read_excel('../data/raw/Saudi_data.xlsx') #read raw data
+data = pd.read_excel('../Rasch_analysis/Data1_Saudi/raw/Saudi_data.xlsx') #read raw data
 
 #separate raw data into different components by column name
 #------------------------------------------------------------------------------
@@ -108,10 +108,11 @@ ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
 
 
 #% consider a subset of facets only
-combination = True
-facets_of_interest = [0,1,2,3,4,5,6,7,8,9] #list of facets of interest
+combination = False
+facets_of_interest = np.array([0,1,2,3,4,5,6,7,8,9]) #list of facets of interest
+facet_index = facets_of_interest - 1
 if len(facets_of_interest) < len(facets_key): #if some facets have been removed
-    facet_select = facets_RUMM.isin(facets_of_interest) #series of selected facets
+    facet_select = facets_RUMM.isin(facet_index) #series of selected facets
     facet_index = facet_select[facet_select==True].index #index of facets of interest
     #trim data files so they only include facets of interest
     id1 = id1.iloc[facet_index] 
@@ -120,7 +121,7 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     agreements_RUMM = agreements_RUMM.iloc[facet_index] 
     ratings_RUMM = ratings_RUMM.iloc[facet_index] 
 
-#%%
+#%
 
 misfit_ID = []
 
@@ -128,37 +129,61 @@ misfits = False #true if ID of misfitting people is included, to remove from the
 
 if misfits:
 
-    persons = pd.read_excel('../Rasch_analysis/Data1_saudi/combined_persons.xlsx') #individual person fit data
+    ID = 'personID' #facetID if facet analysis, personID otherwise
+    
+    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/usual_combined_persons.xlsx') #individual person fit data
     misfits1 = persons.loc[:,'Extm'][persons.loc[:,'Extm']=='extm'] 
-    misfit_ID1 = persons.loc[misfits1.index,'personID']
+    misfit_ID1 = persons.loc[misfits1.index,ID]
 
     persons = persons[persons.loc[:,'Extm']!='extm' ] #remove extremes
     misfits2 = persons.loc[:,'FitResid'][abs(persons.loc[:,'FitResid'])>2.5]
-    misfit_ID2 = persons.loc[misfits2.index,'personID']
+    misfit_ID2 = persons.loc[misfits2.index,ID]
 
     misfit_ID = misfit_ID1.append(misfit_ID2)
 
-#%% remove extreme scores (i.e. people that put the same answer for everything)
+#% remove extreme scores (i.e. people that put the same answer for everything)
 extremes = True
-combination = True
 
 if extremes:
-    ratings_RUMM, id1, PFs_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM,misfit_ID)
+    ratings_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM,facets_RUMM,misfit_ID)
     
-#if selection:
- #   id1 = id1[id1==misfit_ID]
-    #ratings_RUMM, id1, PFs_RUMM, extreme_persons = select_data(ratings_RUMM,id1,PFs_RUMM,misfit_ID)
+#% rescore data
+
+rescore = False
+
+if rescore:
+    ratings_RUMM.replace(1,0,inplace=True)
+    ratings_RUMM.replace(2,1,inplace=True)
+    ratings_RUMM.replace(3,2,inplace=True)
+    ratings_RUMM.replace(4,3,inplace=True)
+    
+    ratings_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM,facets_RUMM)
+    
+    
+    
+#%% delete items
+
+items_del = []
+
+ratings_RUMM2 = ratings_RUMM.copy()
+
+for i in range(len(items_del)):
+    col = ratings_RUMM2.columns[items_del[i]-1]
+    ratings_RUMM.drop(columns=col, inplace=True)
+
+#id_new.drop(id_new.index[k], axis=0, inplace=True)
+
 
 #%% output final data set
-
 #concatenate data - in this case with separate ratings and agreements
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
-    RUMM_ratings = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, ratings_RUMM], axis=1)
-    RUMM_agreements = pd.concat([id1, id1, facets_RUMM, PFs_RUMM, agreements_RUMM], axis=1)
+    #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
+    RUMM_ratings = pd.concat([id1, facets_RUMM, ratings_RUMM], axis=1)
+    RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
-    RUMM_ratings_key = pd.concat([facets_key, PFs_key, ratings_key], axis=1) 
-    RUMM_agreements_key = pd.concat([facets_key, PFs_key, agreements_key], axis=1) 
+    RUMM_ratings_key = pd.concat([facets_key, ratings_key], axis=1) 
+    RUMM_agreements_key = pd.concat([facets_key, agreements_key], axis=1) 
 else: #single facet analysis
     RUMM_ratings = pd.concat([id1, PFs_RUMM, ratings_RUMM], axis=1)
     RUMM_agreements = pd.concat([id1, PFs_RUMM, agreements_RUMM], axis=1)
