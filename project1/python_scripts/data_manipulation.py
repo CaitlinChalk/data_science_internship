@@ -38,36 +38,36 @@ def remove_text(data):
 #INPUT: data for removal of extreme persons, and corresponding identifiers for each person
     #option argument - persons: an additional list of people to remove from the data. If it isn't provided, no extra people are removed
 #RETURN: data with removed extremes, list of extreme person IDs with their corresponding selected score (for all questions) 
-def remove_extremes(data,id1,PFs,persons = []):
+def remove_extremes(data,id1,PFs,facets,persons = []):
     data_new = data.copy() #copy old data to new 
     id_new = id1.copy()
     PFs_new = PFs.copy()
+    facets_new = facets.copy()
     #initialise extreme_info
-    cols = {'Extreme person ID', 'test ID', 'Selected score'}
-    extreme_info = pd.DataFrame([],columns=cols)
-    k=-1
-    for i in range(len(data)):
-        k=k+1
-        row = data.iloc[i,:] #each row corresponds to each person
-        min1 = min(data.min(axis=1)) #minimum value 
-        max1 = max(data.max(axis=1)) #maximum value
-        if len(set(row)) == 1: #if row contains only one element
-           if row.iloc[0] == min1 or row.iloc[0] == max1:  #if selected element is an extreme (either a min or max)              
-               data_new.drop(data_new.index[k], axis=0, inplace=True) #delete that row from data_new
-               id_new.drop(id_new.index[k], axis=0, inplace=True) #delete corresponding person from id_new
-               PFs_new.drop(PFs_new.index[k], axis=0, inplace=True)
-               k=k-1 #reduce index because one row has been deleted in data_new
-               person = id1.iloc[i]
-               id2 = i+1
-               value = row.iloc[0]
-               Data0 = pd.DataFrame([[person,id2,value]],columns=cols)
-               extreme_info = extreme_info.append(Data0, ignore_index=True)
+    min_row = data.min(axis=0) #row corresponding to participant selecting lowest scores for all questions
+    max_row = data.max(axis=0) #row corresponding to participant selecting highest scores for all questions
+    #remove extreme rows from the data
+    data_new = data.loc[(data!=min_row).any(axis=1)] 
+    data_new = data_new.loc[(data_new!=max_row).any(axis=1)]
+    #remove id, PFs, facets corresponding to the extreme rows
+    id_new = id_new.loc[(data!=min_row).any(axis=1)]
+    id_new = id_new.loc[(data!=max_row).any(axis=1)]
+    PFs_new = PFs_new.loc[(data!=min_row).any(axis=1)]
+    PFs_new = PFs_new.loc[(data!=max_row).any(axis=1)]
+    facets_new = facets_new.loc[(data!=min_row).any(axis=1)]
+    facets_new = facets_new.loc[(data!=max_row).any(axis=1)]
+    #get ids of participants who selected extreme scores (for reference)
+    id_extreme = id1 - id_new
+    extreme_info = id1.loc[id_extreme.isna()]
+    extreme_info.rename('Extreme person ID',inplace=True)
+    #remove additional persons, if a list is provided as an argument. Otherwise, no extra persons will be removed
     person_index = id1.isin(persons)[id1.isin(persons)==True].index #index of extra persons to be removed (if the argument is passed)
     data_new.drop(person_index, axis=0, inplace=True)
     id_new.drop(person_index, axis=0, inplace=True)
     PFs_new.drop(person_index, axis=0, inplace=True)
+    facets_new.drop(person_index, axis=0, inplace=True)
     
-    return data_new, id_new, PFs_new, extreme_info
+    return data_new, id_new, PFs_new, facets_new, extreme_info
             
 #function to ammend facet quantities (with extremes removed) 
 #INPUT: old facet list, old facet key, IDs of extreme persons
