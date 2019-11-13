@@ -109,7 +109,7 @@ ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
 
 #% consider a subset of facets only
 combination = False
-facets_of_interest = np.array([0,1,2,3,4,5,6,7,8,9]) #list of facets of interest
+facets_of_interest = np.array([1,2,3,4,5,6,7,8,9,10]) #list of facets of interest
 facet_index = facets_of_interest - 1
 if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     facet_select = facets_RUMM.isin(facet_index) #series of selected facets
@@ -125,13 +125,13 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
 
 misfit_ID = []
 
-misfits = False #true if ID of misfitting people is included, to remove from the analysis
+misfits = True #true if ID of misfitting people is included, to remove from the analysis
 
 if misfits:
 
     ID = 'personID' #facetID if facet analysis, personID otherwise
     
-    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/usual_combined_persons.xlsx') #individual person fit data
+    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/combined_persons_facet_agree2.xlsx') #individual person fit data
     misfits1 = persons.loc[:,'Extm'][persons.loc[:,'Extm']=='extm'] 
     misfit_ID1 = persons.loc[misfits1.index,ID]
 
@@ -140,12 +140,25 @@ if misfits:
     misfit_ID2 = persons.loc[misfits2.index,ID]
 
     misfit_ID = misfit_ID1.append(misfit_ID2)
+    #id of non-misfitting people
+    id_non_misfit = persons.loc[:,ID] - misfit_ID
+    non_misfit_ID = persons.loc[id_non_misfit.isna(),ID]
 
-#% remove extreme scores (i.e. people that put the same answer for everything)
-extremes = True
+
+extremes = False #% remove extreme scores (i.e. people that put the same answer for everything) and misfits
+extract = True #extract only the people of interest from a given file
 
 if extremes:
-    ratings_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM,facets_RUMM,misfit_ID)
+    agreements_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(agreements_RUMM,id1,PFs_RUMM,facets_RUMM,misfit_ID)
+
+if extract:
+    id_extract = id1.isin(non_misfit_ID)
+    id_extract = id_extract[id_extract].index #id of non-misfits (corresponding to original id series)
+    #extract non-misfits only from data
+    agreements_RUMM = agreements_RUMM.iloc[id_extract]  
+    id1 = id1.iloc[id_extract]
+    PFs_RUMM = PFs_RUMM.iloc[id_extract]
+    facets_RUMM = facets_RUMM.iloc[id_extract]
     
 #% rescore data
 
@@ -163,14 +176,15 @@ if rescore:
     
 #%% delete items
 
-items_del = []
+items_del = [15,5,13,14,16,2]
 
 ratings_RUMM2 = ratings_RUMM.copy()
+agreements_RUMM2 = agreements_RUMM.copy()
 
 for i in range(len(items_del)):
-    col = ratings_RUMM2.columns[items_del[i]-1]
-    ratings_RUMM.drop(columns=col, inplace=True)
-
+    col = agreements_RUMM2.columns[items_del[i]-1]
+    #ratings_RUMM.drop(columns=col, inplace=True)
+    agreements_RUMM.drop(columns=col, inplace=True)
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
 
 
