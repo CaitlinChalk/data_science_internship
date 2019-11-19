@@ -74,6 +74,9 @@ id1 = person_factors.loc[:,"Respondent Serial"]
 person_factors = person_factors.drop(columns="Respondent Serial")
 person_factors = person_factors.drop(columns="Sex Of Respondent")
 person_factors = person_factors.drop(columns="Household Income US$")
+person_factors = person_factors.drop(columns="Nationality Of Respondent")
+person_factors = person_factors.drop(columns="Marital Status")
+person_factors = person_factors.drop(columns="Household Income SR")
 
 #combine attitudes and opinions
 attitudes_and_opinions = pd.concat([attitudes, usual_ratings], axis=1, sort=False) #concatenates horizontally
@@ -94,17 +97,18 @@ PFs_RUMM, PFs_key = convert2RUMM(person_factors,0) #function to convert PF data 
 PFs_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
 PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
+
+#data of interest: ratings or agreements?
+data_type = "agreements"
+if data_type == "ratings":
+    data_interest = ratings
+elif data_type == "agreements":
+    data_interest = agreements
 # items
 
-agreements_RUMM, agreements_key = convert2RUMM(agreements,1) #convert to RUMM format
-agreements_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
-agreements_RUMM = agreements_RUMM.astype(int) #ensure integer values
-
-# ratings
-
-ratings_RUMM, ratings_key = convert2RUMM(ratings,1) #convert to RUMM format
-ratings_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
-ratings_RUMM = ratings_RUMM.astype(int) #ensure integer values
+data_RUMM, data_key = convert2RUMM(data_interest,1) #convert to RUMM format
+data_RUMM.replace(np.nan,-1,inplace=True) #replace NaNs with -1
+data_RUMM = data_RUMM.astype(int) #ensure integer values
 
 
 #% consider a subset of facets only
@@ -118,10 +122,9 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
     id1 = id1.iloc[facet_index] 
     facets_RUMM = facets_RUMM.iloc[facet_index] 
     PFs_RUMM = PFs_RUMM.iloc[facet_index,:]
-    agreements_RUMM = agreements_RUMM.iloc[facet_index] 
-    ratings_RUMM = ratings_RUMM.iloc[facet_index] 
+    data_RUMM = data_RUMM.iloc[facet_index] 
 
-#%
+#% handle misfitting and extreme persons in the data
 
 misfit_ID = []
 
@@ -131,7 +134,7 @@ if misfits:
 
     ID = 'personID' #facetID if facet analysis, personID otherwise
     
-    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/combined_persons_facet_agree2.xlsx') #individual person fit data
+    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/final_persons_agreements2.xlsx') #individual person fit data
     misfits1 = persons.loc[:,'Extm'][persons.loc[:,'Extm']=='extm'] 
     misfit_ID1 = persons.loc[misfits1.index,ID]
 
@@ -149,13 +152,15 @@ extremes = False #% remove extreme scores (i.e. people that put the same answer 
 extract = True #extract only the people of interest from a given file
 
 if extremes:
-    agreements_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(agreements_RUMM,id1,PFs_RUMM,facets_RUMM,misfit_ID)
+    data_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(data_RUMM,id1,PFs_RUMM,facets_RUMM,misfit_ID)
 
 if extract:
+    
+    #non_misfit_ID = persons.loc[:,ID]
     id_extract = id1.isin(non_misfit_ID)
     id_extract = id_extract[id_extract].index #id of non-misfits (corresponding to original id series)
     #extract non-misfits only from data
-    agreements_RUMM = agreements_RUMM.iloc[id_extract]  
+    data_RUMM = data_RUMM.iloc[id_extract]  
     id1 = id1.iloc[id_extract]
     PFs_RUMM = PFs_RUMM.iloc[id_extract]
     facets_RUMM = facets_RUMM.iloc[id_extract]
@@ -165,26 +170,26 @@ if extract:
 rescore = False
 
 if rescore:
-    ratings_RUMM.replace(1,0,inplace=True)
-    ratings_RUMM.replace(2,1,inplace=True)
-    ratings_RUMM.replace(3,2,inplace=True)
-    ratings_RUMM.replace(4,3,inplace=True)
+    data_RUMM.replace(1,0,inplace=True)
+    data_RUMM.replace(2,1,inplace=True)
+    data_RUMM.replace(3,2,inplace=True)
+    data_RUMM.replace(4,3,inplace=True)
     
-    ratings_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(ratings_RUMM,id1,PFs_RUMM,facets_RUMM)
+    data_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(data_RUMM,id1,PFs_RUMM,facets_RUMM)
     
     
     
 #%% delete items
 
-items_del = [15,5,13,14,16,2]
+items_del = [2,5,13,14,15,16]
 
-ratings_RUMM2 = ratings_RUMM.copy()
-agreements_RUMM2 = agreements_RUMM.copy()
+data_RUMM2 = data_RUMM.copy()
+#agreements_RUMM2 = agreements_RUMM.copy()
 
 for i in range(len(items_del)):
-    col = agreements_RUMM2.columns[items_del[i]-1]
-    #ratings_RUMM.drop(columns=col, inplace=True)
-    agreements_RUMM.drop(columns=col, inplace=True)
+    col = data_RUMM2.columns[items_del[i]-1]
+    data_RUMM.drop(columns=col, inplace=True)
+    #agreements_RUMM.drop(columns=col, inplace=True)
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
 
 
@@ -193,26 +198,31 @@ for i in range(len(items_del)):
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_ratings = pd.concat([id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
+    #RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
-    RUMM_ratings_key = pd.concat([facets_key, ratings_key], axis=1) 
-    RUMM_agreements_key = pd.concat([facets_key, agreements_key], axis=1) 
+    RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
+    #RUMM_agreements_key = pd.concat([facets_key, agreements_key], axis=1) 
 else: #single facet analysis
-    RUMM_ratings = pd.concat([id1, PFs_RUMM, ratings_RUMM], axis=1)
-    RUMM_agreements = pd.concat([id1, PFs_RUMM, agreements_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
+    #RUMM_agreements = pd.concat([id1, PFs_RUMM, agreements_RUMM], axis=1)
 
-    RUMM_ratings_key = pd.concat([PFs_key, ratings_key], axis=1) 
-    RUMM_agreements_key = pd.concat([PFs_key, agreements_key], axis=1)
+    RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
+    #RUMM_agreements_key = pd.concat([PFs_key, agreements_key], axis=1)
 #write data and corresponding key to excel worksheet
 
-with pd.ExcelWriter("Saudi_ratings.xlsx") as writer:
-    RUMM_ratings.to_excel(writer, sheet_name = 'data', index=None, header=False)
-    RUMM_ratings_key.to_excel(writer, sheet_name = 'key')
+if data_type == "ratings":
+    name = "Saudi_ratings.xlsx"
+elif data_type == "agreements":
+    name = "Saudi_agreements.xlsx"
+    
+with pd.ExcelWriter(name) as writer:
+    RUMM_data.to_excel(writer, sheet_name = 'data', index=None, header=False)
+    RUMM_data_key.to_excel(writer, sheet_name = 'key')
 
-with pd.ExcelWriter("Saudi_agreements.xlsx") as writer:
-    RUMM_agreements.to_excel(writer, sheet_name = 'data', index=None, header=False)
-    RUMM_agreements_key.to_excel(writer, sheet_name = 'key')
+#with pd.ExcelWriter("Saudi_agreements.xlsx") as writer:
+#    RUMM_agreements.to_excel(writer, sheet_name = 'data', index=None, header=False)
+#    RUMM_agreements_key.to_excel(writer, sheet_name = 'key')
 
 
 
