@@ -143,7 +143,8 @@ if misfits:
 
     ID = 'personID' #facetID if facet analysis, personID otherwise
     
-    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/final_persons_ratings2.xlsx') #individual person fit data
+    persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/final_persons_'+data_type+'2.xlsx') #individual person fit data
+    persons2 = pd.read_excel('../Rasch_analysis/Data1_Saudi/id_products_combo4r3.xlsx')
     misfits1 = persons.loc[:,'Extm'][persons.loc[:,'Extm']=='extm'] 
     misfit_ID1 = persons.loc[misfits1.index,ID]
 
@@ -165,7 +166,7 @@ if extremes:
 
 if extract:
     
-    #non_misfit_ID = persons.loc[:,ID]
+    #non_misfit_ID = persons2.iloc[:,0]  
     id_extract = id1.isin(non_misfit_ID)
     id_extract = id_extract[id_extract].index #id of non-misfits (corresponding to original id series)
     #extract non-misfits only from data
@@ -190,7 +191,10 @@ if rescore:
     
 #% delete items
 
-items_del = [7,11,18]
+if data_type == "ratings":
+    items_del = [7,11,18]
+elif data_type == "agreements":
+    items_del = [2,5,13,14,15,16]
 
 data_RUMM2 = data_RUMM.copy()
 #agreements_RUMM2 = agreements_RUMM.copy()
@@ -204,7 +208,7 @@ for i in range(len(items_del)):
 #%% product manipulations
     
 #% remove facets
-facets_of_interest = np.array([1,2,4,5,7,8,9]) #list of facets of interest
+facets_of_interest = np.array([1,2,4,5,7,8,9,10]) #list of facets of interest
 facet_index = facets_of_interest - 1
 facet_select = facets_RUMM.isin(facet_index) #series of selected facets
 #facet_index = facet_select[facet_select==True].index #index of facets of interest
@@ -221,7 +225,7 @@ for i in range(len(facets_of_interest)):
 n_final = min(facet_quantity) 
 #n_remove = facet_quantity - 
 #%remove random selection of data0
-sample = True
+sample = False
 if sample:
     fac = [1,2,4,5,7,8,9] #facet number to sample
     #number of samples to drop
@@ -233,10 +237,10 @@ if sample:
         id1.drop(facet_sample.index,inplace=True)
 
 #%combine facets 4&5 = 2, 6&7 = 3, 8 = 4, 9 = 5
-#facets_RUMM.replace([1-1,2-1],1,inplace=True)
+#facets_RUMM.replace([1-1,2-1],0,inplace=True)
 #facets_RUMM.replace([6-1,7-1],2,inplace=True)
-#facets_RUMM.replace(8-1,2,inplace=True)
-#facets_RUMM.replace(9-1,3,inplace=True)
+#facets_RUMM.replace(8-1,1,inplace=True)
+#facets_RUMM.replace(9-1,2,inplace=True)
 
 
 #%% person factor manipulations
