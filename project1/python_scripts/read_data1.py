@@ -38,11 +38,11 @@ c2 = "Attitude Towards Benefit Fully Dissolves Leaving Behind No Residue In The 
 attitudes = data.loc[:,c1:c2]
 
 #c1 = "Nationality Of Respondent"
-c1 = "Age Of Respondent (ageres)"
+#c2 = "Age Of Respondent (ageres)"
 #c3 = "Marital Status"
 #c4 = "Employment Of Respondent"
 #c5 = "Size Of Household"
-#c6 = "Number Of Children In Household Under 16"
+c1 = "Number Of Children In Household Under 16"
 #c7 = "Monthly Household Income"
 #c2 = "Marital Status"
 person_factors = data.loc[:,c1]
@@ -108,7 +108,7 @@ PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
 
 #data of interest: ratings or agreements?
-data_type = "ratings"
+data_type = "agreements"
 if data_type == "ratings":
     data_interest = ratings
 elif data_type == "agreements":
@@ -251,18 +251,36 @@ if sample:
 #c6 = "Number of Children in Household Under 16"
 #c7 = "Region"
 
+#% remove PFs
+remove = False
 
-#c2 = age of respondent
-#combine 30-34 (2), 35-40 (3), 41-45 (4) and 46-50 (5)
-PFs_RUMM.replace([2,3,4,5],2,inplace=True) #30-50
-PFs_RUMM.replace(6,3,inplace=True) #under 18
+if remove:
+    PF_of_interest = np.array([0,1,2,3,4,5,6,7,8]) #list of facets of interest
+    PF_select = PFs_RUMM.isin(PF_of_interest) #series of selected facets
+    id1 = id1[PF_select] 
+    facets_RUMM = facets_RUMM[PF_select] 
+    PFs_RUMM = PFs_RUMM[PF_select]
+    data_RUMM = data_RUMM[PF_select]
 
-sample = False
+#c6 = number of children under 16
+#combine 3 (5),4 (1),5 (0),6+ (4)
+PFs_RUMM.replace([0,1,4,5],0,inplace=True) #3+
+PFs_RUMM.replace(2,1,inplace=True) #none
+PFs_RUMM.replace(3,2,inplace=True) #one
+PFs_RUMM.replace(6,3,inplace=True) #two
+    
+PF_levels = np.unique(PFs_RUMM)
+PF_quantity =[]
+for i in range(len(PF_levels)):
+    PF_quantity.append(len(PFs_RUMM[PFs_RUMM==PF_levels[i]]))
+
+sample = True
 if sample:
-    PF = [1,2,3] #facet number to sample
-    n = [27,33,8] #number of samples to drop
-    for i in range(len(PF)):
-        PF_sample = PFs_RUMM[PFs_RUMM==PF[i]].sample(n[i]) #random sample containing this facet
+    #PF = [1,2,3] #facet number to sample
+    #n = [27,33,8] #number of samples to drop
+    for i in range(len(PF_levels)):
+        n = PF_quantity[i] - min(PF_quantity)
+        PF_sample = PFs_RUMM[PFs_RUMM==PF_levels[i]].sample(n) #random sample containing this facet
         PFs_RUMM.drop(PF_sample.index,inplace=True) #remove sample from facets
         data_RUMM.drop(PF_sample.index,inplace=True) #remove sample from data
         id1.drop(PF_sample.index,inplace=True)
@@ -324,10 +342,10 @@ if PFs_RUMM.ndim > 1:
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_data = pd.concat([id1, facets_RUMM, data_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
     #RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
-    RUMM_data_key = pd.concat([facets_key, data_key], axis=1) 
+    RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
     #RUMM_agreements_key = pd.concat([facets_key, agreements_key], axis=1) 
 else: #single facet analysis
     RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
