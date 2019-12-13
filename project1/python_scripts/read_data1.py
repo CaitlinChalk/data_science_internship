@@ -33,19 +33,23 @@ c1 = "Agreement With This Product Provides Excellent Value"
 c2 = "Agreement With I Would Recommend This Product To My Family And Friends"
 agreements = data.loc[:,c1:c2]
 
+c1 = "Rating For Cleaning Laundry Overall"
+c2 = "Agreement With I Would Recommend This Product To My Family And Friends"
+rat_agreements = data.loc[:,c1:c2]
+
 c1 = "Attitude Towards Benefit Removes All Greasy Food Stains With No Pretreating (Scrubbing Or Extra Products)"
 c2 = "Attitude Towards Benefit Fully Dissolves Leaving Behind No Residue In The Machine, Or On My Laundry"
 attitudes = data.loc[:,c1:c2]
 
-#c1 = "Nationality Of Respondent"
-#c2 = "Age Of Respondent (ageres)"
-#c3 = "Marital Status"
-#c4 = "Employment Of Respondent"
-#c5 = "Size Of Household"
-c1 = "Number Of Children In Household Under 16"
-#c7 = "Monthly Household Income"
-#c2 = "Marital Status"
-person_factors = data.loc[:,c1]
+#c1 = "Region"
+c1 = "Nationality Of Respondent"
+c2 = "Age Of Respondent (ageres)"
+c3 = "Marital Status"
+c4 = "Employment Of Respondent"
+c5 = "Size Of Household"
+c6 = "Number Of Children In Household Under 16"
+c7 = "Monthly Household Income"
+person_factors = data.loc[:,[c4,c6]]
 
 #person ID
 id1 = data.loc[:,"Respondent Serial"]
@@ -113,6 +117,8 @@ if data_type == "ratings":
     data_interest = ratings
 elif data_type == "agreements":
     data_interest = agreements
+elif data_type == "both":
+    data_interest = rat_agreements
 # items
 
 data_RUMM, data_key = convert2RUMM(data_interest,1) #convert to RUMM format
@@ -144,6 +150,7 @@ if misfits:
     ID = 'personID' #facetID if facet analysis, personID otherwise
     
     persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/final_persons_'+data_type+'2.xlsx') #individual person fit data
+    #persons = pd.read_excel('../Rasch_analysis/Data1_Saudi/final_persons_agreements2.xlsx')
     persons2 = pd.read_excel('../Rasch_analysis/Data1_Saudi/id_products_combo4r3.xlsx')
     misfits1 = persons.loc[:,'Extm'][persons.loc[:,'Extm']=='extm'] 
     misfit_ID1 = persons.loc[misfits1.index,ID]
@@ -191,24 +198,29 @@ if rescore:
     
 #% delete items
 
-if data_type == "ratings":
-    items_del = [7,11,18]
-elif data_type == "agreements":
-    items_del = [2,5,13,14,15,16]
+delete_items = True
 
-data_RUMM2 = data_RUMM.copy()
+if delete_items:
+    if data_type == "ratings":
+        items_del = [7,11,18]
+    elif data_type == "agreements":
+        items_del = [2,5,13,14,15,16]
+    elif data_type == "both":
+        items_del = [2,3,5,7,8,9,10,11,12,13,14,16,20,23,28,31,32,33,34]
+
+    data_RUMM2 = data_RUMM.copy()
 #agreements_RUMM2 = agreements_RUMM.copy()
 
-for i in range(len(items_del)):
-    col = data_RUMM2.columns[items_del[i]-1]
-    data_RUMM.drop(columns=col, inplace=True)
+    for i in range(len(items_del)):
+        col = data_RUMM2.columns[items_del[i]-1]
+        data_RUMM.drop(columns=col, inplace=True)
     #agreements_RUMM.drop(columns=col, inplace=True)
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
 
 #%% product manipulations
     
 #% remove facets
-facets_of_interest = np.array([1,2,4,5,7,8,9,10]) #list of facets of interest
+facets_of_interest = np.array([1,2,3,4,5,6,7,8,9,10]) #list of facets of interest
 facet_index = facets_of_interest - 1
 facet_select = facets_RUMM.isin(facet_index) #series of selected facets
 #facet_index = facet_select[facet_select==True].index #index of facets of interest
@@ -252,88 +264,104 @@ if sample:
 #c7 = "Region"
 
 #% remove PFs
-remove = False
+if PFs_RUMM.ndim == 1:
+        
+    remove = False
 
-if remove:
-    PF_of_interest = np.array([0,1,2,3,4,5,6,7,8]) #list of facets of interest
-    PF_select = PFs_RUMM.isin(PF_of_interest) #series of selected facets
-    id1 = id1[PF_select] 
-    facets_RUMM = facets_RUMM[PF_select] 
-    PFs_RUMM = PFs_RUMM[PF_select]
-    data_RUMM = data_RUMM[PF_select]
+    if remove:
+        PF_of_interest = np.array([0,1,2,3,4,5,6,7,8]) #list of facets of interest
+        PF_select = PFs_RUMM.isin(PF_of_interest) #series of selected facets
+        id1 = id1[PF_select] 
+        facets_RUMM = facets_RUMM[PF_select] 
+        PFs_RUMM = PFs_RUMM[PF_select]
+        data_RUMM = data_RUMM[PF_select]
 
-#c6 = number of children under 16
-#combine 3 (5),4 (1),5 (0),6+ (4)
-PFs_RUMM.replace([0,1,4,5],0,inplace=True) #3+
-PFs_RUMM.replace(2,1,inplace=True) #none
-PFs_RUMM.replace(3,2,inplace=True) #one
-PFs_RUMM.replace(6,3,inplace=True) #two
+    #c1 = nationality of respondent
+    #change to saudi (14), eqyptian (2) + others
+    PFs_RUMM.replace([0,1,3,4,5,6,7,8,9,10,11,12,13,15,16,17,18,19],99,inplace=True)
+    PFs_RUMM.replace(14,0,inplace=True) #saudi
+    PFs_RUMM.replace(2,1,inplace=True) #eqyptian
+    PFs_RUMM.replace(99,2,inplace=True) #other  
     
-PF_levels = np.unique(PFs_RUMM)
-PF_quantity =[]
-for i in range(len(PF_levels)):
-    PF_quantity.append(len(PFs_RUMM[PFs_RUMM==PF_levels[i]]))
+    PF_levels = np.unique(PFs_RUMM)
+    PF_quantity =[]
+    for i in range(len(PF_levels)):
+        PF_quantity.append(len(PFs_RUMM[PFs_RUMM==PF_levels[i]]))
 
-sample = True
-if sample:
+    sample = True
+    if sample:
     #PF = [1,2,3] #facet number to sample
     #n = [27,33,8] #number of samples to drop
-    for i in range(len(PF_levels)):
-        n = PF_quantity[i] - min(PF_quantity)
-        PF_sample = PFs_RUMM[PFs_RUMM==PF_levels[i]].sample(n) #random sample containing this facet
-        PFs_RUMM.drop(PF_sample.index,inplace=True) #remove sample from facets
-        data_RUMM.drop(PF_sample.index,inplace=True) #remove sample from data
-        id1.drop(PF_sample.index,inplace=True)
+        for i in range(len(PF_levels)):
+            n = PF_quantity[i] - min(PF_quantity)
+            PF_sample = PFs_RUMM[PFs_RUMM==PF_levels[i]].sample(n) #random sample containing this facet
+            PFs_RUMM.drop(PF_sample.index,inplace=True) #remove sample from facets
+            data_RUMM.drop(PF_sample.index,inplace=True) #remove sample from data
+            id1.drop(PF_sample.index,inplace=True)
 
 if PFs_RUMM.ndim > 1:
 
 #c1 = nationality of respondent
 #change to saudi (14), eqyptian (2) + others
-    PFs_RUMM.loc[:,c1].replace([0,1,3,4,5,6,7,8,9,10,11,12,13,15,16,17,18,19],99,inplace=True)
-    PFs_RUMM.loc[:,c1].replace(14,0,inplace=True) #saudi
-    PFs_RUMM.loc[:,c1].replace(2,1,inplace=True) #eqyptian
-    PFs_RUMM.loc[:,c1].replace(99,2,inplace=True) #other    
-    
+    if c1 in PFs_RUMM.columns:
+        PFs_RUMM.loc[:,c1].replace([0,1,3,4,5,6,7,8,9,10,11,12,13,15,16,17,18,19],99,inplace=True)
+        PFs_RUMM.loc[:,c1].replace(14,0,inplace=True) #saudi
+        PFs_RUMM.loc[:,c1].replace(2,1,inplace=True) #eqyptian
+        PFs_RUMM.loc[:,c1].replace(99,2,inplace=True) #other    
+        
 #c2 = age of respondent
 #combine 30-34 (2), 35-40 (3), 41-45 (4) and 46-50 (5)
-    PFs_RUMM.loc[:,c2].replace([2,3,4,5],2,inplace=True) #30-50
-    PFs_RUMM.loc[:,c2].replace(6,3,inplace=True) #under 18
+    if c2 in PFs_RUMM.columns:
+        PFs_RUMM.loc[:,c2].replace([2,3,4,5],2,inplace=True) #30-50
+        PFs_RUMM.loc[:,c2].replace(6,3,inplace=True) #under 18
 
 #c3 = marital status
 #combine widowed, single and divorced
-    PFs_RUMM.loc[:,c3].replace([0,2,3],0,inplace=True) #not married
+    if c3 in PFs_RUMM.columns:
+        PFs_RUMM.loc[:,c3].replace([0,2,3],0,inplace=True) #not married
 
 #c4 = employment of respondent 
 #combine unemployed (7), looking (8) and retired (4)
 #combine business (3) and self employed (5)
 #combine student (6) and part time (1)
-    PFs_RUMM.loc[:,c4].replace([1,6],1,inplace=True) #part-time/student
-    PFs_RUMM.loc[:,c4].replace([3,5],3,inplace=True) #self employed 
-    PFs_RUMM.loc[:,c4].replace([4,7,8],4,inplace=True) #unemployed
+    #PFs_RUMM.loc[:,c4].replace([1,6],1,inplace=True) #part-time/student
+    if c4 in PFs_RUMM.columns:            
+        PFs_RUMM.loc[:,c4].replace([3,5],3,inplace=True) #self employed 
+        PFs_RUMM.loc[:,c4].replace([4,7,8],4,inplace=True) #unemployed
 
 #c5 = size of household
 #combine one (2), two (6) and three (5)
-    PFs_RUMM.loc[:,c5].replace([2,5,6],2,inplace=True) #3 or less
+#combine 6 and 7+
+    if c5 in PFs_RUMM.columns:
+        PFs_RUMM.loc[:,c5].replace([2,5,6],2,inplace=True) #3 or less
+        PFs_RUMM.loc[:,c5].replace([3,4],3,inplace=True) #6 or more
 
 #c6 = number of children under 16
 #combine 3 (5),4 (1),5 (0),6+ (4)
-    PFs_RUMM.loc[:,c6].replace([0,1,4,5],0,inplace=True) #3+
-    PFs_RUMM.loc[:,c6].replace(2,1,inplace=True) #none
-    PFs_RUMM.loc[:,c6].replace(3,2,inplace=True) #one
-    PFs_RUMM.loc[:,c6].replace(6,3,inplace=True) #two
+    if c6 in PFs_RUMM.columns:    
+        PFs_RUMM.loc[:,c6].replace([0,1,4,5],0,inplace=True) #3+
+        PFs_RUMM.loc[:,c6].replace(2,1,inplace=True) #none
+        PFs_RUMM.loc[:,c6].replace(3,2,inplace=True) #one
+        PFs_RUMM.loc[:,c6].replace(6,3,inplace=True) #two
 
 #c7 = Monthly household income
 #combine 11250 (0) & 13750 (1)
 #combine 16250 (2), 18750 (3), 21250 (7)
-    PFs_RUMM.loc[:,c7].replace([0,1],0,inplace=True) #10.001 - 15.000
-    PFs_RUMM.loc[:,c7].replace([2,3,7],1,inplace=True) #over 15.000
-    PFs_RUMM.loc[:,c7].replace(4,2,inplace=True) #5.001 - 7.500
-    PFs_RUMM.loc[:,c7].replace(5,3,inplace=True) #7.501 - 10.000 
-    PFs_RUMM.loc[:,c7].replace(6,4,inplace=True) #under 5.000
-    PFs_RUMM.loc[:,c7].replace(8,5,inplace=True) #prefer not to say
+    if c7 in PFs_RUMM.columns:
+        PFs_RUMM.loc[:,c7].replace([0,1],0,inplace=True) #10.001 - 15.000
+        PFs_RUMM.loc[:,c7].replace([2,3,7],1,inplace=True) #over 15.000
+        PFs_RUMM.loc[:,c7].replace(4,2,inplace=True) #5.001 - 7.500
+        PFs_RUMM.loc[:,c7].replace(5,3,inplace=True) #7.501 - 10.000 
+        PFs_RUMM.loc[:,c7].replace(6,4,inplace=True) #under 5.000
+        PFs_RUMM.loc[:,c7].replace(8,5,inplace=True) #prefer not to say
 
 
-
+        PF = PFs_RUMM.loc[:,c7]
+    
+        PF_levels = np.unique(PF)
+        PF_quantity =[]
+        for i in range(len(PF_levels)):
+            PF_quantity.append(len(PF[PF==PF_levels[i]]))
 
 
 
@@ -342,7 +370,7 @@ if PFs_RUMM.ndim > 1:
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, facets_RUMM, data_RUMM], axis=1)
     #RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
     RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
@@ -359,6 +387,8 @@ if data_type == "ratings":
     name = "Saudi_ratings.xlsx"
 elif data_type == "agreements":
     name = "Saudi_agreements.xlsx"
+elif data_type == "both":
+    name = "Saudi_both.xlsx"
     
 with pd.ExcelWriter(name) as writer:
     RUMM_data.to_excel(writer, sheet_name = 'data', index=None, header=False)
