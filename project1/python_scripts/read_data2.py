@@ -10,6 +10,7 @@ from scipy import stats
 from RUMM_conversion import convert2RUMM #function to convert structured data to RUMM format
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
+from string import ascii_lowercase
 
 data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
 
@@ -34,21 +35,23 @@ def remove_factor(factor,other,items,n,n_min = 1000):
         
     return final_count
 
-#%%sort data
+#%sort data
 #------------------------------------------------------------------------------
 data1 = data[data.loc[:,"Shave Number"]==1]
+data = data[data.loc[:,"Test Aspect"]=="Chemistry"]
 id1 = data.loc[:,"assessor"] #person ID
 items = data.loc[:,"Q1":"Q10"] #questions
 product = data.loc[:,"Product"] #product/facet being tested
 shave = data.loc[:,"Shave Number"] #number of shave (of multiple, per person)
 aspect = data.loc[:,"Test Aspect"]
 
-#% select first shave only
+#% select one shave only
+shave_no = 3
 
-id1 = id1[shave==1]
-items = items[shave==1]
-product = product[shave==1]
-aspect = aspect[shave==1]
+id1 = id1[shave==shave_no]
+items = items[shave==shave_no]
+product = product[shave==shave_no]
+aspect = aspect[shave==shave_no]
 
 save_pattern = False #run if the pattern of respondents for each product is required (for visualisation)
 
@@ -69,15 +72,15 @@ if save_pattern:
         series1.name = prod[i]
         pattern = pd.concat([pattern,series1], axis=1)
         
-    with pd.ExcelWriter("response_pattern.xlsx") as writer:        
+    with pd.ExcelWriter("response_pattern_chemistry2.xlsx") as writer:        
         pattern.to_excel(writer, index=None, header=True)
     
 
 
 #%% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
-prod_only = ['Prod 2','Prod 3','Prod 6', 'Prod 19','Prod 39']
-prods = prod_only + ['Prod 2 Control','Prod 3 Control', 'Prod 6 Control', 'Prod 19 Control', 'Prod 39 Control']
+prod_only = ['Prod 6','Prod 2','Prod 18', 'Prod 19','Prod 29','Prod 31','Prod 32']
+prods = prod_only + ['Prod 6 Control','Prod 2 Control', 'Prod 18 Control', 'Prod 19 Control', 'Prod 29 Control', 'Prod 31 Control', 'Prod 32 Control']
 #prods = np.unique(product)
 if len(prods) <  len(np.unique(product)): 
     facet_select = product.isin(prods) #series of selected facets
@@ -150,27 +153,33 @@ if misfits:
 #% remove extreme scores (i.e. people that put the same answer for everything)
 extremes = False
 
-if extremes: #TO DO: edit to make PFs an optional argument
+if extremes: #TO DO: edit to make PFs an optional argument, edit for facet analysis
     items, id1, product_RUMM, extreme_persons = remove_extremes(items,id1,product_RUMM,misfit_ID)
     
 #% rescore data
 
-rescore = False
+rescore = True
 
 if rescore:
     items.replace(1,0,inplace=True)
-    items.replace(2,1,inplace=True)
-    items.replace(3,2,inplace=True)
-    items.replace(4,3,inplace=True)
+    items.replace(2,0,inplace=True)
+    items.replace(3,0,inplace=True)
+    items.replace(4,1,inplace=True)
+    items.replace(5,1,inplace=True)
     
-    items, id1, product_RUMM, extreme_persons = remove_extremes(items,id1,product_RUMM)
+    if extremes:
+        items, id1, product_RUMM, extreme_persons = remove_extremes(items,id1,product_RUMM)
     
 replace = False
 
 if replace: 
-    product_RUMM.loc[:].replace([3,5,7],1,inplace=True) #combine controls 
+    product_RUMM.loc[:].replace([1,3,5,7,9,11],1,inplace=True) #combine controls 
+    product_RUMM.loc[:].replace(4,3,inplace=True) #product 2
+    product_RUMM.loc[:].replace(6,4,inplace=True) #product 29
+    product_RUMM.loc[:].replace(8,5,inplace=True) #product 31 or product 6
+    product_RUMM.loc[:].replace(10,6,inplace=True) #product 6
     
-#%% delete items
+#%% delete items and data
 
 items_del = []
 
@@ -180,14 +189,36 @@ for i in range(len(items_del)):
     col = items2.columns[items_del[i]-1]
     items.drop(columns=col, inplace=True)
 
+sample = False
+if sample:
+    fac = [1] #facet number to sample        
+    for i in range(len(fac)):
+        n = 100 #number of samples to drop
+        facet_sample = product_RUMM[product_RUMM==fac[i]].sample(n) #random sample containing this facet
+        product_RUMM.drop(facet_sample.index,inplace=True) #remove sample from facets
+        items.drop(facet_sample.index,inplace=True) #remove sample from data
+        id1.drop(facet_sample.index,inplace=True)
+
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
+
+#%% convert numerical data to string and replace numbers with letters
+           
+alphabet = list(ascii_lowercase)
+prod_list = np.unique(product_RUMM)
+letter_list = []
+product_RUMM = product_RUMM.apply(str) #convert to string  
+for i in range(len(prod_list)):
+    letter = alphabet[i]
+    product_RUMM.replace(str(i),letter,inplace=True)
+    letter_list.append(letter)
+
+product_key["Letter"] = letter_list
 
 
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, product_RUMM, PF_RUMM, items], axis=1)
-
+RUMM_out = pd.concat([id1, id1, product_RUMM, items], axis=1)
 
 #write data and corresponding key to excel worksheet
 
