@@ -37,12 +37,12 @@ def remove_text(data):
 #Note - these persons can't be placed on the Rasch analysis scale
 #INPUT: data for removal of extreme persons, and corresponding identifiers for each person
     #option argument - persons: an additional list of people to remove from the data. If it isn't provided, no extra people are removed
+    #Note - factor can be facets of person factors (for the removal of corresponding extreme person data)
 #RETURN: data with removed extremes, list of extreme person IDs with their corresponding selected score (for all questions) 
-def remove_extremes(data,id1,PFs,facets,persons = []):
+def remove_extremes(data,id1,factor,persons = []):
     data_new = data.copy() #copy old data to new 
     id_new = id1.copy()
-    PFs_new = PFs.copy()
-    facets_new = facets.copy()
+    factor_new = factor.copy()
     #initialise extreme_info
     min_row = data.min(axis=0) #row corresponding to participant selecting lowest scores for all questions
     max_row = data.max(axis=0) #row corresponding to participant selecting highest scores for all questions
@@ -52,10 +52,8 @@ def remove_extremes(data,id1,PFs,facets,persons = []):
     #remove id, PFs, facets corresponding to the extreme rows
     id_new = id_new.loc[(data!=min_row).any(axis=1)]
     id_new = id_new.loc[(data!=max_row).any(axis=1)]
-    PFs_new = PFs_new.loc[(data!=min_row).any(axis=1)]
-    PFs_new = PFs_new.loc[(data!=max_row).any(axis=1)]
-    facets_new = facets_new.loc[(data!=min_row).any(axis=1)]
-    facets_new = facets_new.loc[(data!=max_row).any(axis=1)]
+    factor_new = factor_new.loc[(data!=min_row).any(axis=1)]
+    factor_new = factor_new.loc[(data!=max_row).any(axis=1)]    
     #get ids of participants who selected extreme scores (for reference)
     id_extreme = id1 - id_new
     extreme_info = id1.loc[id_extreme.isna()]
@@ -64,10 +62,9 @@ def remove_extremes(data,id1,PFs,facets,persons = []):
     person_index = id1.isin(persons)[id1.isin(persons)==True].index #index of extra persons to be removed (if the argument is passed)
     data_new.drop(person_index, axis=0, inplace=True)
     id_new.drop(person_index, axis=0, inplace=True)
-    PFs_new.drop(person_index, axis=0, inplace=True)
-    facets_new.drop(person_index, axis=0, inplace=True)
+    factor_new.drop(person_index, axis=0, inplace=True)
     
-    return data_new, id_new, PFs_new, facets_new, extreme_info
+    return data_new, id_new, factor_new, extreme_info
             
 #function to ammend facet quantities (with extremes removed) 
 #INPUT: old facet list, old facet key, IDs of extreme persons
