@@ -46,12 +46,16 @@ shave = data.loc[:,"Shave Number"] #number of shave (of multiple, per person)
 aspect = data.loc[:,"Test Aspect"]
 
 #% select one shave only
-shave_no = 3
+single_shave = False
 
-id1 = id1[shave==shave_no]
-items = items[shave==shave_no]
-product = product[shave==shave_no]
-aspect = aspect[shave==shave_no]
+if single_shave:
+    shave_no = [1,2,3,4,5]
+
+    id1 = id1[shave.isin(shave_no)]
+    items = items[shave.isin(shave_no)]
+    product = product[shave.isin(shave_no)]
+    aspect = aspect[shave.isin(shave_no)]
+    shave = shave[shave.isin(shave_no)]
 
 save_pattern = False #run if the pattern of respondents for each product is required (for visualisation)
 
@@ -72,22 +76,22 @@ if save_pattern:
         series1.name = prod[i]
         pattern = pd.concat([pattern,series1], axis=1)
         
-    with pd.ExcelWriter("response_pattern_chemistry2.xlsx") as writer:        
+    with pd.ExcelWriter("response_pattern_chemistry4.xlsx") as writer:        
         pattern.to_excel(writer, index=None, header=True)
     
 
 
 #%% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
-prod_only = ['Prod 6','Prod 2','Prod 18', 'Prod 19','Prod 29','Prod 31','Prod 32']
-prods = prod_only + ['Prod 6 Control','Prod 2 Control', 'Prod 18 Control', 'Prod 19 Control', 'Prod 29 Control', 'Prod 31 Control', 'Prod 32 Control']
-#prods = np.unique(product)
-if len(prods) <  len(np.unique(product)): 
-    facet_select = product.isin(prods) #series of selected facets
-    id1 = id1[facet_select] 
-    product = product[facet_select] 
-    items = items[facet_select] 
-    aspect = aspect[facet_select]
+prod_only = ['Prod 6','Prod 18', 'Prod 19','Prod 2','Prod 29','Prod 31','Prod 32']
+prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control', 'Prod 2 Control', 'Prod 29 Control', 'Prod 31 Control', 'Prod 32 Control']
+ 
+facet_select = product.isin(prods) #series of selected facets
+id1 = id1[facet_select] 
+product = product[facet_select] 
+items = items[facet_select] 
+aspect = aspect[facet_select]
+shave = shave[facet_select]
 
 #number of responses for each product  
 product_count1 = remove_factor(product,id1,items,1)
@@ -200,8 +204,23 @@ if sample:
         id1.drop(facet_sample.index,inplace=True)
 
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
+        
+#%% rack or stack the data
+    #EDIT TO MAKE GENERAL FOR MORE THAN 2 SHAVES
+    #[i + '0' for i in str(test)] --> use something like this to append 0 etc to every element in list
+stack = True
+if stack:
+    shave_select = [1,2]
+    for i in range(len(shave_select)-1):
+        id1a = id1[shave==shave_select[i]].array
+        new
+        id1 = pd.concat([id1[shave==shave_select[i]],id1[shave==shave_select[i+1]]],axis=0)
+        product_RUMM = pd.concat([product_RUMM[shave==shave_select[i]],product_RUMM[shave==shave_select[i+1]]],axis=0)
+        items = pd.concat([items[shave==shave_select[i]],items[shave==shave_select[i+1]]],axis=0)
+        shave = pd.concat([shave[shave==shave_select[i]],shave[shave==shave_select[i+1]]],axis=0)
 
 #%% convert numerical data to string and replace numbers with letters
+        #to do: convert to general function
            
 alphabet = list(ascii_lowercase)
 prod_list = np.unique(product_RUMM)
@@ -214,11 +233,17 @@ for i in range(len(prod_list)):
 
 product_key["Letter"] = letter_list
 
+shave_list = np.unique(shave)
+shave = shave.apply(str) #convert to string  
+for i in range(len(shave_list)):
+    letter = alphabet[i]
+#    shave.replace(str(i+1),letter,inplace=True)
+
 
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, product_RUMM, items], axis=1)
+RUMM_out = pd.concat([id1, id1, product_RUMM, shave, items], axis=1)
 
 #write data and corresponding key to excel worksheet
 
