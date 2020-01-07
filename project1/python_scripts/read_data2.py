@@ -11,8 +11,9 @@ from RUMM_conversion import convert2RUMM #function to convert structured data to
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
 from string import ascii_lowercase
+import random
 
-data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
+data = pd.read_excel('../Data2_Shaving/shaving_data_original.xlsx') #read raw data
 
 #% functions
 #remove subset of data according to specified factor
@@ -38,7 +39,11 @@ def remove_factor(factor,other,items,n,n_min = 1000):
 #%sort data
 #------------------------------------------------------------------------------
 data1 = data[data.loc[:,"Shave Number"]==1]
-data = data[data.loc[:,"Test Aspect"]=="Chemistry"]
+
+select_aspect = False
+if select_aspect:
+    aspects = ["Chemistry"]
+    data = data[data.loc[:,"Test Aspect"].isin(aspects)]
 id1 = data.loc[:,"assessor"] #person ID
 items = data.loc[:,"Q1":"Q10"] #questions
 product = data.loc[:,"Product"] #product/facet being tested
@@ -46,10 +51,10 @@ shave = data.loc[:,"Shave Number"] #number of shave (of multiple, per person)
 aspect = data.loc[:,"Test Aspect"]
 
 #% select one shave only
-single_shave = False
+single_shave = True
 
 if single_shave:
-    shave_no = [1,2,3,4,5]
+    shave_no = [1,2,3,4]
 
     id1 = id1[shave.isin(shave_no)]
     items = items[shave.isin(shave_no)]
@@ -81,17 +86,30 @@ if save_pattern:
     
 
 
-#%% consider certain products only
+#% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
 prod_only = ['Prod 6','Prod 18', 'Prod 19','Prod 2','Prod 29','Prod 31','Prod 32']
 prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control', 'Prod 2 Control', 'Prod 29 Control', 'Prod 31 Control', 'Prod 32 Control']
- 
-facet_select = product.isin(prods) #series of selected facets
-id1 = id1[facet_select] 
-product = product[facet_select] 
-items = items[facet_select] 
-aspect = aspect[facet_select]
-shave = shave[facet_select]
+
+prods = np.unique(product)
+remove_controls = False
+
+if remove_controls:
+    
+    i = 0
+    while i < (len(prods)):
+        if 'Control' in prods[i]:
+            prods = np.delete(prods,i)
+            i = i-1
+            i = i+1
+#%
+if len(prods) < len(np.unique(product)):
+    facet_select = product.isin(prods) #series of selected facets
+    id1 = id1[facet_select] 
+    product = product[facet_select] 
+    items = items[facet_select] 
+    aspect = aspect[facet_select]
+    shave = shave[facet_select]
 
 #number of responses for each product  
 product_count1 = remove_factor(product,id1,items,1)
@@ -155,7 +173,7 @@ if misfits:
     misfit_ID = misfit_ID1.append(misfit_ID2)
 
 #% remove extreme scores (i.e. people that put the same answer for everything)
-extremes = False
+extremes = True
 
 if extremes: #TO DO: edit to make PFs an optional argument, edit for facet analysis
     items, id1, product_RUMM, extreme_persons = remove_extremes(items,id1,product_RUMM,misfit_ID)
@@ -183,7 +201,7 @@ if replace:
     product_RUMM.loc[:].replace(8,5,inplace=True) #product 31 or product 6
     product_RUMM.loc[:].replace(10,6,inplace=True) #product 6
     
-#%% delete items and data
+#% delete items and data
 
 items_del = []
 
@@ -195,7 +213,7 @@ for i in range(len(items_del)):
 
 sample = False
 if sample:
-    fac = [1] #facet number to sample        
+    fac = [2] #facet number to sample        
     for i in range(len(fac)):
         n = 100 #number of samples to drop
         facet_sample = product_RUMM[product_RUMM==fac[i]].sample(n) #random sample containing this facet
@@ -205,45 +223,110 @@ if sample:
 
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
         
-#%% rack or stack the data
-    #EDIT TO MAKE GENERAL FOR MORE THAN 2 SHAVES
-    #[i + '0' for i in str(test)] --> use something like this to append 0 etc to every element in list
+#% rack or stack the data
+
 stack = True
 if stack:
-    shave_select = [1,2]
-    for i in range(len(shave_select)-1):
-        id1a = id1[shave==shave_select[i]].array
-        new
-        id1 = pd.concat([id1[shave==shave_select[i]],id1[shave==shave_select[i+1]]],axis=0)
-        product_RUMM = pd.concat([product_RUMM[shave==shave_select[i]],product_RUMM[shave==shave_select[i+1]]],axis=0)
-        items = pd.concat([items[shave==shave_select[i]],items[shave==shave_select[i+1]]],axis=0)
-        shave = pd.concat([shave[shave==shave_select[i]],shave[shave==shave_select[i+1]]],axis=0)
+    shave_select = [4,3,2,1]
+    for i in range(len(shave_select)):  
+        if i == 0: #initialise stack
+            id_stack = id1[shave==shave_select[i]]
+            #edit id for repeated shaves by adding the shave number afterwards
+            index1 = id_stack.index
+            id_stack = [str(id_stack.iloc[j]) + str(shave_select[i]) for j in range(len(id_stack))]
+            id_stack = pd.Series(id_stack,index=index1)
+            id_stack = id_stack.astype(int)
+            
+            product_stack = product_RUMM[shave==shave_select[i]]
+            item_stack = items[shave==shave_select[i]]
+            shave_stack = shave[shave==shave_select[i]]  
+        
+        if i > 0:
+            #edit id for repeated shaves by adding the shave number afterwards
+            id_stack1 = id1[shave==shave_select[i]]
+            index1 = id_stack1.index
+            id_stack1 = [str(id_stack1.iloc[j]) + str(shave_select[i]) for j in range(len(id_stack1))]
+            id_stack1 = pd.Series(id_stack1,index=index1)
+            id_stack1 = id_stack1.astype(int)
+            
+            id_stack = pd.concat([id_stack,id_stack1])
+            product_stack = pd.concat([product_stack,product_RUMM[shave==shave_select[i]]])
+            item_stack = pd.concat([item_stack,items[shave==shave_select[i]]])
+            shave_stack = pd.concat([shave_stack,shave[shave==shave_select[i]]])
+        
+    id1 = id_stack.copy()
+    product_RUMM = product_stack.copy()
+    items = item_stack.copy()
+    shave = shave_stack.copy()
 
-#%% convert numerical data to string and replace numbers with letters
+#% convert numerical data to string and replace numbers with letters
         #to do: convert to general function
+
+alphabet_conversion = False
+
+if alphabet_conversion:
            
-alphabet = list(ascii_lowercase)
-prod_list = np.unique(product_RUMM)
-letter_list = []
-product_RUMM = product_RUMM.apply(str) #convert to string  
-for i in range(len(prod_list)):
-    letter = alphabet[i]
-    product_RUMM.replace(str(i),letter,inplace=True)
-    letter_list.append(letter)
+    alphabet = list(ascii_lowercase)
+    prod_list = np.unique(product_RUMM)
+    letter_list = []
+    product_RUMM = product_RUMM.apply(str) #convert to string  
+    for i in range(len(prod_list)):
+        letter = alphabet[i]
+        product_RUMM.replace(str(i),letter,inplace=True)
+        letter_list.append(letter)
 
-product_key["Letter"] = letter_list
+    product_key["Letter"] = letter_list
 
-shave_list = np.unique(shave)
-shave = shave.apply(str) #convert to string  
-for i in range(len(shave_list)):
-    letter = alphabet[i]
+#shave_list = np.unique(shave)
+#shave = shave.apply(str) #convert to string  
+#for i in range(len(shave_list)):
+#    letter = alphabet[i]
 #    shave.replace(str(i+1),letter,inplace=True)
+
+
+#%% select each person at random over all 10 shaves
+
+select_every_person = False
+
+if select_every_person:
+    person_index = []
+    for j in range(len(shave_select)):
+        id_temp = id1[shave==shave_select[j]]
+        id_list = np.unique(id_temp)
+        for i in range(len(id_list)):
+            person = id_temp[id_temp==id_list[i]].index
+            selection = random.choice(person)
+            person_index.append(selection)
+
+    id1 = id1[person_index]
+    product_RUMM = product_RUMM[person_index]
+    shave = shave[person_index]
+    items = items.loc[person_index,:]
+ 
+#FINISH : write code to track the same people for the same products over time
+    #first remove the people/products from shave 4, then remove the same corresponding products/people from shaves 1-3
+    #OR: if person + product not in shave 1-3, then remove.
+    #OR: use the data from shave 4 to extract the remaining shaves. i.e. find that person and that product, get the data
+    #for the remaining shaves
+track = True
+if track:
+    shave_select = 4
+    id_track = id1[shave==shave_select]
+            #edit id for repeated shaves by adding the shave number afterwards
+            index1 = id_stack.index
+            id_stack = [str(id_stack.iloc[j]) + str(shave_select[i]) for j in range(len(id_stack))]
+            id_stack = pd.Series(id_stack,index=index1)
+            id_stack = id_stack.astype(int)
+            
+    product_stack = product_RUMM[shave==shave_select[i]]
+    item_stack = items[shave==shave_select[i]]
+    shave_stack = shave[shave==shave_select[i]]  
 
 
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, product_RUMM, shave, items], axis=1)
+RUMM_out = pd.concat([id1, shave, items], axis=1, ignore_index = True)
 
 #write data and corresponding key to excel worksheet
 
