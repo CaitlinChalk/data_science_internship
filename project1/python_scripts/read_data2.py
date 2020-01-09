@@ -13,29 +13,21 @@ from data_manipulation import remove_extremes
 from string import ascii_lowercase
 import random
 
-data = pd.read_excel('../Data2_Shaving/shaving_data_original.xlsx') #read raw data
+data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
 
-#% functions
-#remove subset of data according to specified factor
-#factor can be either people or products for removal
-#other is the 'other' factor (e.g. people, if factor is products)
-def remove_factor(factor,other,items,n,n_min = 1000):
-    factor2 = factor.copy()
-    unique_list = np.unique(factor2)
-    for i in range(len(unique_list)):
-        if len(factor2[factor2==unique_list[i]])<n or len(factor2[factor2==unique_list[i]])>n_min:
-            index = factor2[factor2==unique_list[i]].index
-            factor.drop(index, inplace =True)
-            other.drop(index, inplace =True)
-            items.drop(index, inplace =True)
-    
-    unique_list2 = np.unique(factor)
-    final_count = [] #initialise array to count number of responses for each person
-    for i in range(len(unique_list2)):
-        final_count.append(len(factor[factor==unique_list2[i]]))
-        
-    return final_count
+#functions
+#function to select person at random over every shave
+#main purpose - item anchoring
+def select_every_person(shave_select,id_in):
+    person_index = []
+    id_list = np.unique(id_in)
+    for i in range(len(id_list)):
+        person = id_in[id_in==id_list[i]].index
+        selection = random.choice(person)
+        person_index.append(selection)
 
+    index_out = id_in[person_index].index
+    return index_out
 #%sort data
 #------------------------------------------------------------------------------
 data1 = data[data.loc[:,"Shave Number"]==1]
@@ -51,7 +43,7 @@ shave = data.loc[:,"Shave Number"] #number of shave (of multiple, per person)
 aspect = data.loc[:,"Test Aspect"]
 
 #% select one shave only
-single_shave = True
+single_shave = False
 
 if single_shave:
     shave_no = [1,2,3,4]
@@ -85,7 +77,6 @@ if save_pattern:
         pattern.to_excel(writer, index=None, header=True)
     
 
-
 #% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
 prod_only = ['Prod 6','Prod 18', 'Prod 19','Prod 2','Prod 29','Prod 31','Prod 32']
@@ -110,41 +101,7 @@ if len(prods) < len(np.unique(product)):
     items = items[facet_select] 
     aspect = aspect[facet_select]
     shave = shave[facet_select]
-
-#number of responses for each product  
-product_count1 = remove_factor(product,id1,items,1)
-
-remove = False
-
-if remove:      
-    #remove people who haven't answered enough questions
-    id_count1 = remove_factor(id1,product,items,4)        
-    #remove products with an insufficient number of respondents
-    product_count2 = remove_factor(product,id1,items,4)      
-    #remove people who haven't answered enough questions again
-    id_count2 = remove_factor(id1,product,items,1)
     
-#%remove certain controls (only keep those which were answered by the same people, for the same product aspect)
-remove_controls = False
-
-if remove_controls:
-
-    id2 = id1.copy()    
-    product2 = product.copy()
-    aspect2 = aspect.copy()
-
-    id_product = id1[product.isin(prod_only)]
-    aspect_product = aspect[product.isin(prod_only)]
-    for i in range(len(product2)):
-        if 'Control' in product2.iloc[i]:
-            id_test = id_product[id_product==id2.iloc[i]]
-            as_test = aspect_product[aspect_product==aspect2.iloc[i]]
-            if  len(id_test)==0 or len(as_test)==0:
-                id1.drop(id2.index[i], inplace = True)
-                product.drop(id2.index[i], inplace = True)
-                items.drop(id2.index[i], inplace = True)
-                aspect.drop(id2.index[i], inplace = True)
-
 #% convert product to RUMM format
 
 #products   
@@ -176,8 +133,8 @@ if misfits:
 extremes = True
 
 if extremes: #TO DO: edit to make PFs an optional argument, edit for facet analysis
-    items, id1, product_RUMM, extreme_persons = remove_extremes(items,id1,product_RUMM,misfit_ID)
-    
+    items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items[shave==1],id1[shave==1],product_RUMM[shave==1],misfit_ID)
+    #shave = shave[id1.index]    
 #% rescore data
 
 rescore = True
@@ -190,7 +147,12 @@ if rescore:
     items.replace(5,1,inplace=True)
     
     if extremes:
-        items, id1, product_RUMM, extreme_persons = remove_extremes(items,id1,product_RUMM)
+        items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items[shave==1],id1[shave==1],product_RUMM[shave==1])
+        #shave = shave[id1.index]     
+        id1.drop(extreme_persons.index,inplace=True)
+        product_RUMM.drop(extreme_persons.index,inplace=True)
+        shave.drop(extreme_persons.index,inplace=True)
+        items.drop(extreme_persons.index,inplace=True)
     
 replace = False
 
@@ -225,7 +187,7 @@ if sample:
         
 #% rack or stack the data
 
-stack = True
+stack = False
 if stack:
     shave_select = [4,3,2,1]
     for i in range(len(shave_select)):  
@@ -284,56 +246,141 @@ if alphabet_conversion:
 #    shave.replace(str(i+1),letter,inplace=True)
 
 
-#%% select each person at random over all 10 shaves
+#% select each person at random over all 10 shaves
 
-select_every_person = False
+#select_every_person = False
 
-if select_every_person:
-    person_index = []
-    for j in range(len(shave_select)):
-        id_temp = id1[shave==shave_select[j]]
-        id_list = np.unique(id_temp)
-        for i in range(len(id_list)):
-            person = id_temp[id_temp==id_list[i]].index
-            selection = random.choice(person)
-            person_index.append(selection)
+#if select_every_person:
+#    person_index = []
+#    for j in range(len(shave_select)):
+#        id_temp = id1[shave==shave_select[j]]
+#        id_list = np.unique(id_temp)
+#        for i in range(len(id_list)):
+#            person = id_temp[id_temp==id_list[i]].index
+#            selection = random.choice(person)
+#            person_index.append(selection)
 
-    id1 = id1[person_index]
-    product_RUMM = product_RUMM[person_index]
-    shave = shave[person_index]
-    items = items.loc[person_index,:]
+ #   id1 = id1[person_index]
+ #   product_RUMM = product_RUMM[person_index]
+ #   shave = shave[person_index]
+ #   items = items.loc[person_index,:]
  
-#FINISH : write code to track the same people for the same products over time
-    #first remove the people/products from shave 4, then remove the same corresponding products/people from shaves 1-3
-    #OR: if person + product not in shave 1-3, then remove.
-    #OR: use the data from shave 4 to extract the remaining shaves. i.e. find that person and that product, get the data
-    #for the remaining shaves
+    
+#stack the same people rating the same products, for each shave number
 track = True
 if track:
-    shave_select = 4
-    id_track = id1[shave==shave_select]
-            #edit id for repeated shaves by adding the shave number afterwards
-            index1 = id_stack.index
-            id_stack = [str(id_stack.iloc[j]) + str(shave_select[i]) for j in range(len(id_stack))]
-            id_stack = pd.Series(id_stack,index=index1)
-            id_stack = id_stack.astype(int)
+    shave_select = [1,2,3,4] #shave number to select the people for tracking (chose the one with the lowest number of participants)    
+    #remove people who don't have a complete set of shaves, after the removal of the extremes
+    id_list0 = np.unique(id1) 
+    id_keep = []
+    n = len(shave_select)
+    id2 = id1.copy() #copy id list
+    for i in range(len(id_list0)): #loop through each id
+        person_prods = product_RUMM[id1==id_list0[i]] #products tested by each person
+        prod_list = np.unique(person_prods)
+        for j in range(len(prod_list)):
+            no_shaves = len(person_prods[person_prods==prod_list[j]])
+            if no_shaves < n: #if the number of shaves is less than the number under consideration
+                index1 = person_prods[person_prods==prod_list[j]].index
+                id2.drop(index1, axis=0, inplace=True)
+    
+    #only use data which has a full set of shaves            
+    id1 = id1[id2.index]
+    product_RUMM = product_RUMM[id2.index]
+    shave = shave[id2.index]
+    items = items.loc[id2.index,:]
+    
+    person_index = [] #initialise array of unique id indexes
+    for j in range(len(shave_select)):
+        if j == 0: #j = 0 corresponds to the last shave number
+            id_temp = id1[shave==shave_select[j]]    
+            id_list = np.unique(id_temp) #unique list of ids for corresponding shave number
+            #select one test/product at random for each id
+            for i in range(len(id_list)):
+                person = id_temp[id_temp==id_list[i]].index
+                selection = random.choice(person)
+                person_index.append(selection)
+            #list of unique ids with corresponding products for tracking
+            id_track = id1[person_index]
+            product_track = product_RUMM[person_index]
             
-    product_stack = product_RUMM[shave==shave_select[i]]
-    item_stack = items[shave==shave_select[i]]
-    shave_stack = shave[shave==shave_select[i]]  
+            id_stack = id_track.copy() #make a copy of id tracking list
+            id_original = id_track.copy() #keep copy of original id list
+            #edit id for repeated shaves by adding the shave number afterwards (so that ids are distinct for each shave)
+            index1 = id_stack.index
+            id_stack = [str(id_stack.iloc[i]) + str(shave_select[j]) for i in range(len(id_stack))]
+            id_stack = pd.Series(id_stack,index=index1)
+            #create first sequence for stacked data, to be concatenated with data for remaining shave numbers
+            id_stack = id_stack.astype(int)           
+            product_stack = product_RUMM[index1]
+            item_stack = items.loc[index1,:]
+            shave_stack = shave[index1] 
+        if j > 0:
+            #select ids and products for new shave number
+            id2 = id1[shave==shave_select[j]] 
+            prod2 = product_RUMM[shave==shave_select[j]]
+            #extract the same ids and same tests as for the last shave (i=0)
+            index_list = [] #initialise index list            
+            for k in range(len(id_track)):
+                #find index for current shave, corresponding to the data for the last shave
+                id0 = id_track.iloc[k]
+                prod0 = product_track.iloc[k]
+                index2 = prod2[(id2==id0) & (prod2==prod0)].index 
+                if len(index2) > 0:
+                    index_list.append(index2[0]) #add index to list
+            #extract the data            
+            id_stack1 = id1[index_list] 
+            id_original = pd.concat([id_original,id_stack1]) #keep copy of original id (before editing)
+            product_stack1 = product_RUMM[index_list]
+            item_stack1 = items.loc[index_list,:]
+            shave_stack1 = shave[index_list]
+            #edit id for repeated shaves by adding the shave number afterwards
+            #TO DO - make this optional
+            index1 = id_stack1.index
+            id_stack1 = [str(id_stack1.iloc[i]) + str(shave_select[j]) for i in range(len(id_stack1))]
+            id_stack1 = pd.Series(id_stack1,index=index1)
+            id_stack1 = id_stack1.astype(int)
+            
+            #concatenate data for each shave number
+            id_stack = pd.concat([id_stack,id_stack1])
+            product_stack = pd.concat([product_stack,product_stack1])
+            item_stack = pd.concat([item_stack,item_stack1])
+            shave_stack = pd.concat([shave_stack,shave_stack1])
+    
+    #copy stacked data to output data    
+    id1 = id_stack.copy()
+    product_RUMM = product_stack.copy()
+    items = item_stack.copy()
+    shave = shave_stack.copy()
 
+#%%
 
+unique_index = select_every_person(shave_select,id_original)
+
+id_anchor = id1[unique_index] 
+product_anchor = product_RUMM[unique_index]
+items_anchor = items.loc[unique_index,:]
+shave_anchor = shave[unique_index]          
+    
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
 RUMM_out = pd.concat([id1, shave, items], axis=1, ignore_index = True)
+RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
 
 #write data and corresponding key to excel worksheet
+index_out = True
+if index_out:
+    save_index = []
+    for i in range(len(id1.index)):
+        save_index.append(id1.index[i])
+    save_index = pd.Series(save_index)
 
 with pd.ExcelWriter("first_shave.xlsx") as writer:
     RUMM_out.to_excel(writer, sheet_name = 'data', index=None, header=False)
+    RUMM_anchor.to_excel(writer, sheet_name = 'anchor data', index=None, header=False)
     product_key.to_excel(writer, sheet_name = 'key')
-
+    save_index.to_excel(writer, sheet_name = 'index')
 
 
 
