@@ -18,8 +18,9 @@ data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
 #functions
 #function to select person at random over every shave
 #main purpose - item anchoring
-def select_every_person(shave_select,id_in):
+def select_every_person(shave_select,id_in,id_ignore=[]):
     person_index = []
+    id_in.drop(id_ignore,inplace=True)
     id_list = np.unique(id_in)
     for i in range(len(id_list)):
         person = id_in[id_in==id_list[i]].index
@@ -46,7 +47,7 @@ aspect = data.loc[:,"Test Aspect"]
 single_shave = False
 
 if single_shave:
-    shave_no = [1,2,3,4]
+    shave_no = [2,5,10]
 
     id1 = id1[shave.isin(shave_no)]
     items = items[shave.isin(shave_no)]
@@ -85,14 +86,13 @@ prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control', 'Pro
 prods = np.unique(product)
 remove_controls = False
 
-if remove_controls:
-    
+if remove_controls:    
     i = 0
     while i < (len(prods)):
         if 'Control' in prods[i]:
             prods = np.delete(prods,i)
             i = i-1
-            i = i+1
+        i = i+1
 #%
 if len(prods) < len(np.unique(product)):
     facet_select = product.isin(prods) #series of selected facets
@@ -132,8 +132,8 @@ if misfits:
 #% remove extreme scores (i.e. people that put the same answer for everything)
 extremes = True
 
-if extremes: #TO DO: edit to make PFs an optional argument, edit for facet analysis
-    items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items[shave==1],id1[shave==1],product_RUMM[shave==1],misfit_ID)
+#if extremes: #TO DO: edit to make PFs an optional argument, edit for facet analysis
+   # items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items[shave==2],id1[shave==2],product_RUMM[shave==2],misfit_ID)
     #shave = shave[id1.index]    
 #% rescore data
 
@@ -147,13 +147,14 @@ if rescore:
     items.replace(5,1,inplace=True)
     
     if extremes:
-        items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items[shave==1],id1[shave==1],product_RUMM[shave==1])
-        #shave = shave[id1.index]     
-        id1.drop(extreme_persons.index,inplace=True)
-        product_RUMM.drop(extreme_persons.index,inplace=True)
-        shave.drop(extreme_persons.index,inplace=True)
+        items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
+        items_1, id1_1, product_RUMM_1, extreme_persons2 = remove_extremes(items[shave==2],id1[shave==2],product_RUMM[shave==2]) 
         items.drop(extreme_persons.index,inplace=True)
-    
+        items = items.dropna()       
+        id1 = id1[items.index]
+        product_RUMM = product_RUMM[items.index]
+        shave = shave[items.index]
+            
 replace = False
 
 if replace: 
@@ -266,30 +267,32 @@ if alphabet_conversion:
  #   items = items.loc[person_index,:]
  
     
-#stack the same people rating the same products, for each shave number
+#%%stack the same people rating the same products, for each shave number
 track = True
 if track:
-    shave_select = [1,2,3,4] #shave number to select the people for tracking (chose the one with the lowest number of participants)    
+    shave_select = [10,9,8,7,6,5,4,3,2,1] #shave number to select the people for tracking (chose the one with the lowest number of participants)    
     #remove people who don't have a complete set of shaves, after the removal of the extremes
     id_list0 = np.unique(id1) 
     id_keep = []
     n = len(shave_select)
     id2 = id1.copy() #copy id list
-    for i in range(len(id_list0)): #loop through each id
-        person_prods = product_RUMM[id1==id_list0[i]] #products tested by each person
-        prod_list = np.unique(person_prods)
-        for j in range(len(prod_list)):
-            no_shaves = len(person_prods[person_prods==prod_list[j]])
-            if no_shaves < n: #if the number of shaves is less than the number under consideration
-                index1 = person_prods[person_prods==prod_list[j]].index
-                id2.drop(index1, axis=0, inplace=True)
+    equal_samples = False
+    if equal_samples:
+        for i in range(len(id_list0)): #loop through each id
+            person_prods = product_RUMM[id1==id_list0[i]] #products tested by each person
+            prod_list = np.unique(person_prods)
+            for j in range(len(prod_list)):
+                no_shaves = len(person_prods[person_prods==prod_list[j]])
+                if no_shaves < n: #if the number of shaves is less than the number under consideration
+                    index1 = person_prods[person_prods==prod_list[j]].index
+                    id2.drop(index1, axis=0, inplace=True)
     
-    #only use data which has a full set of shaves            
-    id1 = id1[id2.index]
-    product_RUMM = product_RUMM[id2.index]
-    shave = shave[id2.index]
-    items = items.loc[id2.index,:]
-    
+        #only use data which has a full set of shaves            
+        id1 = id1[id2.index]
+        product_RUMM = product_RUMM[id2.index]
+        shave = shave[id2.index]
+        items = items.loc[id2.index,:]
+#%    
     person_index = [] #initialise array of unique id indexes
     for j in range(len(shave_select)):
         if j == 0: #j = 0 corresponds to the last shave number
@@ -300,12 +303,13 @@ if track:
                 person = id_temp[id_temp==id_list[i]].index
                 selection = random.choice(person)
                 person_index.append(selection)
-            #list of unique ids with corresponding products for tracking
-            id_track = id1[person_index]
-            product_track = product_RUMM[person_index]
+            #list of unique ids with corresponding products for tracking (convert series to list)
+            id_track = np.array(id1[person_index].array).tolist()
+            product_track = np.array(product_RUMM[person_index].array).tolist()
             
-            id_stack = id_track.copy() #make a copy of id tracking list
-            id_original = id_track.copy() #keep copy of original id list
+            
+            id_stack = id1[person_index] #make a copy of id tracking list
+            id_original = id1[person_index] #keep copy of original id list
             #edit id for repeated shaves by adding the shave number afterwards (so that ids are distinct for each shave)
             index1 = id_stack.index
             id_stack = [str(id_stack.iloc[i]) + str(shave_select[j]) for i in range(len(id_stack))]
@@ -318,14 +322,24 @@ if track:
         if j > 0:
             #select ids and products for new shave number
             id2 = id1[shave==shave_select[j]] 
+            id2_list = np.unique(id2)
             prod2 = product_RUMM[shave==shave_select[j]]
             #extract the same ids and same tests as for the last shave (i=0)
             index_list = [] #initialise index list            
-            for k in range(len(id_track)):
+            for k in range(len(id2_list)):
                 #find index for current shave, corresponding to the data for the last shave
-                id0 = id_track.iloc[k]
-                prod0 = product_track.iloc[k]
-                index2 = prod2[(id2==id0) & (prod2==prod0)].index 
+                id2k = id2_list[k]
+                if id2k in np.array(id_track):
+                    ind_track = person_index[id_track.index(id2k)]
+                    id0 = id2k               
+                    prod0 = product_track[id_track.index(id2k)]  
+                    index2 = prod2[(id2==id0) & (prod2==prod0)].index 
+                else:
+                    prod2k = random.choice(prod2[id2==id2k].array)
+                    index2 = id2[(id2==id2k) & (prod2==prod2k)].index
+                    id_track.append(id2k)
+                    product_track.append(prod2[index2[0]])
+                    person_index.append(index2[0])
                 if len(index2) > 0:
                     index_list.append(index2[0]) #add index to list
             #extract the data            
@@ -334,6 +348,8 @@ if track:
             product_stack1 = product_RUMM[index_list]
             item_stack1 = items.loc[index_list,:]
             shave_stack1 = shave[index_list]
+            #id_track = id_stack1.copy() #update ids for tracking throughout
+            #product_track = product_stack1.copy()
             #edit id for repeated shaves by adding the shave number afterwards
             #TO DO - make this optional
             index1 = id_stack1.index
@@ -355,7 +371,13 @@ if track:
 
 #%%
 
-unique_index = select_every_person(shave_select,id_original)
+#remove extreme people from unique index list
+extreme_index = extreme_persons.index
+id_index = id_original.index
+id_ignore = id_index.isin(extreme_index)
+id_ignore = id_index[id_ignore]
+
+unique_index = select_every_person(shave_select,id_original,id_ignore)
 
 id_anchor = id1[unique_index] 
 product_anchor = product_RUMM[unique_index]
