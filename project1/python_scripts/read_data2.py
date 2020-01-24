@@ -132,10 +132,14 @@ if misfits:
 #% remove extreme scores (i.e. people that put the same answer for everything)
 extremes = True
 
-#if extremes: #TO DO: edit to make PFs an optional argument, edit for facet analysis
-   # items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items[shave==2],id1[shave==2],product_RUMM[shave==2],misfit_ID)
-    #shave = shave[id1.index]    
-#% rescore data
+if extremes:
+    items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
+    items_1, id1_1, product_RUMM_1, extreme_persons2 = remove_extremes(items[shave==2],id1[shave==2],product_RUMM[shave==2]) 
+    items.drop(extreme_persons.index,inplace=True)
+    items = items.dropna()       
+    id1 = id1[items.index]
+    product_RUMM = product_RUMM[items.index]
+    shave = shave[items.index]
 
 rescore = True
 
@@ -149,11 +153,11 @@ if rescore:
     if extremes:
         items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
         items_1, id1_1, product_RUMM_1, extreme_persons2 = remove_extremes(items[shave==2],id1[shave==2],product_RUMM[shave==2]) 
-        items.drop(extreme_persons.index,inplace=True)
-        items = items.dropna()       
-        id1 = id1[items.index]
-        product_RUMM = product_RUMM[items.index]
-        shave = shave[items.index]
+        #items.drop(extreme_persons.index,inplace=True)
+        #items = items.dropna()       
+        #id1 = id1[items.index]
+        #product_RUMM = product_RUMM[items.index]
+        #shave = shave[items.index]
             
 replace = False
 
@@ -173,6 +177,8 @@ items2 = items.copy()
 for i in range(len(items_del)):
     col = items2.columns[items_del[i]-1]
     items.drop(columns=col, inplace=True)
+    
+
 
 sample = False
 if sample:
@@ -377,7 +383,7 @@ id_index = id_original.index
 id_ignore = id_index.isin(extreme_index)
 id_ignore = id_index[id_ignore]
 
-unique_index = select_every_person(shave_select,id_original,id_ignore)
+unique_index = select_every_person(shave_select,id_original)
 
 id_anchor = id1[unique_index] 
 product_anchor = product_RUMM[unique_index]
