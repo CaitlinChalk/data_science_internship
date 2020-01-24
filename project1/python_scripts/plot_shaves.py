@@ -56,7 +56,7 @@ for i in range(no_shaves):
 
 #%% three facet analysis
     
-data =   pd.read_excel('../Data2_Shaving/shave_numbers/shave1_10_results.xls',header=None)  
+data =   pd.read_excel('../Data2_Shaving/shave_numbers/shave1_3_results.xls',header=None)  
 products = data.iloc[:,7]
 items = data.iloc[:,2]
 shaves = data.iloc[:,12]
@@ -219,6 +219,10 @@ if shave_plot:
     fig,ax = plt.subplots(1,3,figsize=cm2inch(25,6))
     
     width = 0.85
+    
+    xmax = max(items.max(),shaves.max(),products.max()) + 0.1
+    xmin = min(items.min(),shaves.min(),products.min()) - 0.1
+    
     #plot products
     if len(shaves)<10:
         ax[0].bar([0,1],[products.loc['prod32'],products.loc['con32']],width,label='Product 32',edgecolor=['black','none'],linewidth=[1,0],
@@ -240,6 +244,7 @@ if shave_plot:
     ax[0].set_title('Products')
     ax[0].set_yticks([])
     ax[0].set_xticks([])
+    ax[0].set_ylim([xmin,xmax])
     #plot items
     labels = ('Item 1', 'Item 2' ,'Item 3', 'Item 4', 'Item 5', 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10')
     
@@ -251,6 +256,7 @@ if shave_plot:
     ax[1].set_yticks([])
     ax[1].tick_params(axis="x",labelsize=8)
     ax[1].set_title('Items')
+    ax[1].set_ylim([xmin,xmax])
     
     #plot shaves
     
@@ -264,6 +270,7 @@ if shave_plot:
     ax[2].set_yticks([])
     ax[2].tick_params(axis="x",labelsize=8)
     ax[2].set_title('Shaves')
+    ax[2].set_ylim([xmin,xmax])
     
     ax[0].set_ylabel('Mean location (logits)')
     
@@ -283,7 +290,7 @@ if shave_plot:
                 'weight' : 'normal',
                 'size'   : 12}
 
-    figname = '10shaves'
+    figname = '3shaves'
     matplotlib.rc('font', **font)
     
     if save:    
