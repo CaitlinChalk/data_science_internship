@@ -13,11 +13,15 @@ import matplotlib.pyplot as plt
 os.chdir("M:\LIDA_internship\project1\python_scripts")
 
 data = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves1_2.xlsx') #read raw data
-dataA = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_2_ext.xlsx')
-dataB = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_5_ext.xlsx')
-dataC = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_8_ext.xlsx')
-dataD = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_10_ext.xlsx')
-
+dataA = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_1_ext.xlsx')
+dataB = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_2_ext.xlsx')
+dataC = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_4_ext.xlsx')
+dataD = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_5_ext.xlsx')
+dataE = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_6_ext.xlsx')
+dataF = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_7_ext.xlsx')
+dataG = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_8_ext.xlsx')
+dataH = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_9_ext.xlsx')
+dataI = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_10_ext.xlsx')
 
 #convert figsize from cm to inches
 def cm2inch(*tupl):
@@ -30,7 +34,7 @@ def cm2inch(*tupl):
 #%%stacked or anchored data
         
 #list data files
-data = [dataA,dataB,dataC,dataD]      
+data = [dataA,dataB,dataC,dataD,dataE,dataF,dataG,dataH,dataI]      
 
 stacked = False
 
@@ -38,7 +42,7 @@ if not stacked:
     n = len(data[0])
     
 #number of shaves
-shave_list = [2,5,8,10]
+shave_list = [1,2,4,5,6,7,8,9,10]
 shaves = len(shave_list)
 
 personID = {name: pd.DataFrame for name in range(shaves)}
@@ -83,9 +87,10 @@ for i in range(shaves):
 results = results.sort_values(by=[1])
 
 #%crop results to consider a selection of shaves only
-selection = False
+selection = True
 if selection:
-    shave_select = [8,10]
+    shave_select = [7,8]
+    shaves = len(shave_select)
     index_select = []
     for i in range(len(shave_select)):
         index2 = shave_list.index(shave_select[i]) + 1
@@ -122,7 +127,8 @@ for i in range(len(people)):
 person_loc = False
 loc_loc = False
 pers_time = True
-save = True
+save = False
+average = False
 
 if person_loc:
 
@@ -264,7 +270,7 @@ if pers_time:
         j=j+2
            
 
-    xmax = 5.5
+    xmax = 6
     xmin = -3.5 
     fig, ax = plt.subplots(3,3,figsize=(10,10))
     k=0
@@ -277,7 +283,7 @@ if pers_time:
             if len(results2) % 9 != 0: #plot remaining person in final subfig (if the number of people is not divisible by n)
                 k2 = k+n+1
         for l in range(k,k2):
-            ax[i,j].plot(shave_list,results2.iloc[l,1:5],'-o',label=results2.iloc[l,0])
+            ax[i,j].plot(shave_list,results2.iloc[l,1:shaves+1],'-o',label=int(results2.iloc[l,0]))
         ax[i,j].set_ylim(xmin,xmax)
         ax[i,j].set_yticks([])
         ax[i,j].set_xticks(shave_list)
@@ -308,10 +314,36 @@ if pers_time:
                         'weight' : 'normal',
                         'size'   : 11.5}
 
-    figname = 'person_time_2_5_8_10_extb'
+    figname = 'person_time_7_8_9_extb'
     matplotlib.rc('font', **font)
     
     if save:
         plt.savefig('Figures2/'+figname+'.pdf')
-        plt.savefig('Figures2/'+figname+'.jpg')    
+        plt.savefig('Figures2/'+figname+'.jpg')  
+        
+if average:
+#plots average results for each shave
+
+    #average person location
+    average_score = []
+    for i in range(shaves):
+        average_score.append(results.loc[:,i+1].mean())    
+    
+    fig = plt.figure()
+    ax = plt.axes()
+    ax.plot(shave_list,average_score,'o-')
+    ax.set_xticks(shave_list)
+    ax.set_xlabel('Shave number', fontsize=12)
+    ax.set_ylabel('Average person location (logits)', fontsize=12)
+    
+    figname = 'average_score_shaves'
+    
+    if save:
+        plt.savefig('Figures2/'+figname+'.pdf')
+        plt.savefig('Figures2/'+figname+'.jpg')  
+    
+
+
+        
+
     
