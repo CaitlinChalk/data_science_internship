@@ -29,11 +29,28 @@ def select_every_person(shave_select,id_in,id_ignore=[]):
 
     index_out = id_in[person_index].index
     return index_out
+
+#function to convert numeric series to alphabetical
+#returns conversion key as dataframe
+def alphabet_conversion(df_in):
+    df_out = df_in.copy()      
+    alphabet = list(ascii_lowercase)
+    df_list = np.unique(df_out)
+    letter_list = []
+    df_out = df_out.apply(str) #convert to string  
+    for i in range(len(df_list)):
+        letter = alphabet[i]
+        df_out.replace(str(df_list[i]),letter,inplace=True)
+        letter_list.append(letter)
+    
+    conversion_data = {'number': df_list, 'letter': letter_list}
+    conversion_key = pd.DataFrame(data=conversion_data)    
+    
+    return df_out, conversion_key
+
 #%sort data
 #------------------------------------------------------------------------------
-data1 = data[data.loc[:,"Shave Number"]==1]
-
-select_aspect = False
+select_aspect = True
 if select_aspect:
     aspects = ["Chemistry"]
     data = data[data.loc[:,"Test Aspect"].isin(aspects)]
@@ -47,7 +64,7 @@ aspect = data.loc[:,"Test Aspect"]
 single_shave = False
 
 if single_shave:
-    shave_no = [2,5,10]
+    shave_no = [1,2,3]
 
     id1 = id1[shave.isin(shave_no)]
     items = items[shave.isin(shave_no)]
@@ -130,13 +147,13 @@ if misfits:
     misfit_ID = misfit_ID1.append(misfit_ID2)
 
 #% remove extreme scores (i.e. people that put the same answer for everything)
-extremes = True
+extremes = False
 
 if extremes:
     items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
     items_1, id1_1, product_RUMM_1, extreme_persons2 = remove_extremes(items[shave==2],id1[shave==2],product_RUMM[shave==2]) 
     items.drop(extreme_persons.index,inplace=True)
-    items = items.dropna()       
+    #items = items.dropna()       
     id1 = id1[items.index]
     product_RUMM = product_RUMM[items.index]
     shave = shave[items.index]
@@ -231,20 +248,10 @@ if stack:
 #% convert numerical data to string and replace numbers with letters
         #to do: convert to general function
 
-alphabet_conversion = False
+shave, shave_key = alphabet_conversion(shave)
 
-if alphabet_conversion:
-           
-    alphabet = list(ascii_lowercase)
-    prod_list = np.unique(product_RUMM)
-    letter_list = []
-    product_RUMM = product_RUMM.apply(str) #convert to string  
-    for i in range(len(prod_list)):
-        letter = alphabet[i]
-        product_RUMM.replace(str(i),letter,inplace=True)
-        letter_list.append(letter)
 
-    product_key["Letter"] = letter_list
+    #product_key["Letter"] = letter_list
 
 #shave_list = np.unique(shave)
 #shave = shave.apply(str) #convert to string  
@@ -274,7 +281,7 @@ if alphabet_conversion:
  
     
 #%%stack the same people rating the same products, for each shave number
-track = True
+track = False
 if track:
     shave_select = [10,9,8,7,6,5,4,3,2,1] #shave number to select the people for tracking (chose the one with the lowest number of participants)    
     #remove people who don't have a complete set of shaves, after the removal of the extremes
@@ -377,24 +384,43 @@ if track:
 
 #%%
 
-#remove extreme people from unique index list
-extreme_index = extreme_persons.index
-id_index = id_original.index
-id_ignore = id_index.isin(extreme_index)
-id_ignore = id_index[id_ignore]
-
-unique_index = select_every_person(shave_select,id_original)
-
-id_anchor = id1[unique_index] 
-product_anchor = product_RUMM[unique_index]
-items_anchor = items.loc[unique_index,:]
-shave_anchor = shave[unique_index]          
+person_list = np.unique(id1)
+index_keep = []
+for i in range(len(person_list)):
+    person_prods = product_RUMM[id1==person_list[i]]
+    product_i = random.choice(person_prods.array)
+    person_index = id1[(id1==person_list[i]) & (product_RUMM==product_i)].index
+    index_keep.extend(person_index.values)
     
-#%% output final data set
+index_keep = np.array(index_keep)
+id1 = id1[index_keep]
+product_RUMM = product_RUMM[index_keep]
+shave = shave[index_keep]
+items = items.loc[index_keep,:]
+
+
+#%%
+#remove extreme people from unique index list
+anchor = False
+if anchor:
+    extreme_index = extreme_persons.index
+    id_index = id_original.index
+    id_ignore = id_index.isin(extreme_index)
+    id_ignore = id_index[id_ignore]
+
+    unique_index = select_every_person(shave_select,id_original)
+
+    id_anchor = id1[unique_index] 
+    product_anchor = product_RUMM[unique_index]
+    items_anchor = items.loc[unique_index,:]
+    shave_anchor = shave[unique_index]          
+    
+#% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, shave, items], axis=1, ignore_index = True)
-RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
+RUMM_out = pd.concat([id1, id1, shave, product_RUMM, items], axis=1, ignore_index = True)
+if anchor:
+    RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
 
 #write data and corresponding key to excel worksheet
 index_out = True
@@ -406,7 +432,8 @@ if index_out:
 
 with pd.ExcelWriter("first_shave.xlsx") as writer:
     RUMM_out.to_excel(writer, sheet_name = 'data', index=None, header=False)
-    RUMM_anchor.to_excel(writer, sheet_name = 'anchor data', index=None, header=False)
+    if anchor:
+        RUMM_anchor.to_excel(writer, sheet_name = 'anchor data', index=None, header=False)
     product_key.to_excel(writer, sheet_name = 'key')
     save_index.to_excel(writer, sheet_name = 'index')
 
