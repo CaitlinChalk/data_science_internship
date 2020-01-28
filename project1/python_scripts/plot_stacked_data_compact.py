@@ -4,17 +4,19 @@ Created on Mon Jan 13 16:49:26 2020
 
 @author: matcc
 """
-
+import os
 import pandas as pd
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
+os.chdir("M:\LIDA_internship\project1\python_scripts")
+
 data = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves1_2.xlsx') #read raw data
-dataA = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves14_1.xlsx')
-dataB = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves14_2.xlsx')
-dataC = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves14_3.xlsx')
-dataD = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves14_4.xlsx')
+dataA = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_2_ext.xlsx')
+dataB = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_5_ext.xlsx')
+dataC = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_8_ext.xlsx')
+dataD = pd.read_excel('../Data2_Shaving/stacked/stacked_shaves110_10_ext.xlsx')
 
 
 #convert figsize from cm to inches
@@ -36,7 +38,7 @@ if not stacked:
     n = len(data[0])
     
 #number of shaves
-shave_list = [1,2,3,4]
+shave_list = [2,5,8,10]
 shaves = len(shave_list)
 
 personID = {name: pd.DataFrame for name in range(shaves)}
@@ -77,13 +79,13 @@ for i in range(shaves):
         loc[i].rename(index_dict,inplace=True)
         results = pd.concat([results,personID[i],loc[i]], axis=1)
 
-#%%sort in ascending order, according to the results at time 1
+#%sort in ascending order, according to the results at time 1
 results = results.sort_values(by=[1])
 
 #%crop results to consider a selection of shaves only
 selection = False
 if selection:
-    shave_select = [2,10]
+    shave_select = [8,10]
     index_select = []
     for i in range(len(shave_select)):
         index2 = shave_list.index(shave_select[i]) + 1
@@ -115,11 +117,11 @@ for i in range(len(people)):
 #people_keep = is_people[is_people].dropna() #peson IDs which are in all shaves
 #reduced results with each person in every shave
 #results_people = results.iloc[people_keep.index,:]
-#%% plots
+#% plots
 
 person_loc = False
-loc_loc = True
-pers_time = False
+loc_loc = False
+pers_time = True
 save = True
 
 if person_loc:
@@ -134,9 +136,9 @@ if person_loc:
         ax.plot(result.index,result,'o-',label=labels[i])
         #visualise extreme locations
         #if i > 0:
-        for label,x,y in zip(ext[i],index[i],results.loc[:,i+1]):
-            if (label==1): #& (label0==0):
-                ax.plot(x,y,'',color='black')
+        #for label,x,y in zip(ext[i],index[i],results.loc[:,i+1]):
+         #   if (label==1): #& (label0==0):
+          #      ax.plot(x,y,'',color='black')
 
     ax.set_xticks([])
     ax.set_xlabel('Person')
@@ -155,7 +157,7 @@ if person_loc:
             'weight' : 'normal',
             'size'   : 11.5}
 
-    figname = 'anchored_2_5_8_10_9items'
+    figname = 'anchored_2_5_8_10_9items_ext'
     matplotlib.rc('font', **font)
     
     if save:
@@ -164,8 +166,8 @@ if person_loc:
         
 if loc_loc:
     
-    #labels = ['Shaves 2-5','Shaves 5-8','Shaves 8-10']
-    labels = ['Shaves 1-2','Shaves 2-3','Shaves 3-4']
+    labels = ['Shaves 2-5','Shaves 5-8','Shaves 8-10']
+    #labels = ['Shaves 1-2','Shaves 2-3','Shaves 3-4']
     
     if selection:
         shave_list = shave_select
@@ -194,25 +196,35 @@ if loc_loc:
         keep2_index = keep2[keep2].index
         result_plot2 = result_plot2.loc[keep2_index,:]
         ext2 = ext[i+1][keep2_index]
-        ax.plot(result_plot1.iloc[:,1],result_plot2.iloc[:,1],'o',label=labels[i])
+        if shaves == 2:
+            label2 = ''
+        else:
+            label2 = labels[i]
+        ax.plot(result_plot1.iloc[:,1],result_plot2.iloc[:,1],'o',label=label2)
         j=j+2
         if i == 0:
             ax.plot(xy,xy,'-',color='red')
             
-        for label,x,y in zip(ext2,result_plot1.iloc[:,1],result_plot2.iloc[:,1]):
-            if (label==1): #& (label0==0):
-                ax.plot(x,y,'*',color='black')
+      #  for label,x,y in zip(ext2,result_plot1.iloc[:,1],result_plot2.iloc[:,1]):
+      #      if (label==1): #& (label0==0):
+      #          ax.plot(x,y,'*',color='black')
     
    #% 
     
-       
-    ax.set_xlabel('Location at shave ' + str(shave_list[0]) + ' (logits)')
-    ax.set_ylabel('Location at shave ' + str(shave_list[1]) + ' (logits)')
+    if shaves == 2:  
+        ax.set_xlabel('Location at shave ' + str(shave_list[0]) + ' (logits)')
+        ax.set_ylabel('Location at shave ' + str(shave_list[1]) + ' (logits)')
+    else:
+        ax.set_xlabel('Location at shave n (logits)')
+        ax.set_ylabel('Location at shave n + 1 (logits)')
    # ax.set_title('Shave ' + str(shave_list[0]) + ' vs Shave ' + str(shave_list[1]))
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(xmin,xmax)
     
-    legend = True
+    if shaves == 2:
+        legend = False
+    else:
+        legend = True
     
     if legend:    
         box = ax.get_position()
@@ -223,9 +235,9 @@ if loc_loc:
                 'weight' : 'normal',
                 'size'   : 11.5}
     
-    #figname = 'anchored_' + str(shave_list[0]) + '_' + str(shave_list[1]) + 'b' 
+    figname = 'anchored_' + str(shave_list[0]) + '_' + str(shave_list[1]) + 'extb' 
     #figname = 'anchored_2_5_8_10b'
-    figname = 'anchored_1_2_3_4b'
+    #figname = 'anchored_2_5_8_10_extb'
     matplotlib.rc('font', **font)
         
     if save:
@@ -236,12 +248,9 @@ if loc_loc:
 
     
 if pers_time:
+#plots the lcoation of every person over every shave
 
-    #labels = ['Shave 1','Shave 2','Shave 3','Shave 4']
-    #labels = ['Shave 1','Shave 10']
-    #change to subplot!
-    n_people = 17
-
+    #reduce data set to contain only the people who have completed all shaves
     j=0
     for i in range(shaves):
         result_plot1 = results.iloc[:,[j,j+1]].sort_values(by=['ID'])
@@ -254,25 +263,34 @@ if pers_time:
             results2 = results2.merge(result_plot1)
         j=j+2
            
-    people = results2.sample(n=n_people)    
-    #people = {name: [] for name in range(shaves)} 
-#%    
-    fig = plt.figure()
-    ax = plt.axes()
-    for i in range(n_people):
-        ax.plot(shave_list,people.iloc[i,1:shaves+1],'o-',label=people.iloc[i,0])
-    
-        
-   # for i in range(shaves):
-   #     ax.plot(index1,results.loc[:,i+1],'o-',label=labels[i])
-        #visualise extreme locations
-        #if i > 0:
-  #      for label,x,y in zip(ext[i],index[i],results.loc[:,i+1]):
-  #          if (label==1): #& (label0==0):
-  #              ax.plot(x,y,'',color='black')
 
-    ax.set_xlabel('Shave number')
-    ax.set_ylabel('Location (logits)')
+    xmax = 5.5
+    xmin = -3.5 
+    fig, ax = plt.subplots(3,3,figsize=(10,10))
+    k=0
+    i=0
+    j=0
+    n = int(len(results2)/9) #number of plots in each subfigure
+    while i < 3:
+        k2 = k+n
+        if i == 2 and j ==2:
+            if len(results2) % 9 != 0: #plot remaining person in final subfig (if the number of people is not divisible by n)
+                k2 = k+n+1
+        for l in range(k,k2):
+            ax[i,j].plot(shave_list,results2.iloc[l,1:5],'-o',label=results2.iloc[l,0])
+        ax[i,j].set_ylim(xmin,xmax)
+        ax[i,j].set_yticks([])
+        ax[i,j].set_xticks(shave_list)
+        ax[i,j].legend(loc='upper center', fancybox=True, shadow=True, ncol=3, prop={"size":8})
+        
+        k=k+5
+        j=j+1
+        if j == 3:
+            i=i+1
+            j=0
+    
+    ax[2,0].set_ylabel('Person location (logits)', fontsize=12)
+    ax[2,0].set_xlabel('Shave number', fontsize=12)
     
     
     legend = False
@@ -290,7 +308,7 @@ if pers_time:
                         'weight' : 'normal',
                         'size'   : 11.5}
 
-    figname = 'person_time_2_5_8_10'
+    figname = 'person_time_2_5_8_10_extb'
     matplotlib.rc('font', **font)
     
     if save:
