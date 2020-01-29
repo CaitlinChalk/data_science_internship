@@ -147,7 +147,7 @@ if misfits:
     misfit_ID = misfit_ID1.append(misfit_ID2)
 
 #% remove extreme scores (i.e. people that put the same answer for everything)
-extremes = False
+extremes = True
 
 if extremes:
     items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
@@ -210,16 +210,21 @@ if sample:
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
         
 #% rack or stack the data
-
-stack = False
-if stack:
-    shave_select = [4,3,2,1]
+stack = True
+id_edit_prod = True
+if stack: #stack the data
+    id_original = id1.copy()
+    shave_select = [10,9,8,7,6,5,4,3,2,1]
     for i in range(len(shave_select)):  
         if i == 0: #initialise stack
             id_stack = id1[shave==shave_select[i]]
-            #edit id for repeated shaves by adding the shave number afterwards
+            #edit id for repeated shaves by adding the shave or product number number afterwards            
             index1 = id_stack.index
-            id_stack = [str(id_stack.iloc[j]) + str(shave_select[i]) for j in range(len(id_stack))]
+            if id_edit_prod:
+                id_edit = product_RUMM
+            else:
+                id_edit = shave
+            id_stack = [str(id_stack[index1[j]]) + str(id_edit[index1[j]]) for j in range(len(id_stack))]
             id_stack = pd.Series(id_stack,index=index1)
             id_stack = id_stack.astype(int)
             
@@ -231,7 +236,11 @@ if stack:
             #edit id for repeated shaves by adding the shave number afterwards
             id_stack1 = id1[shave==shave_select[i]]
             index1 = id_stack1.index
-            id_stack1 = [str(id_stack1.iloc[j]) + str(shave_select[i]) for j in range(len(id_stack1))]
+            if id_edit_prod:
+                id_edit = product_RUMM
+            else:
+                id_edit = shave
+            id_stack1 = [str(id_stack1[index1[j]]) + str(id_edit[index1[j]]) for j in range(len(id_stack1))]
             id_stack1 = pd.Series(id_stack1,index=index1)
             id_stack1 = id_stack1.astype(int)
             
@@ -248,7 +257,7 @@ if stack:
 #% convert numerical data to string and replace numbers with letters
         #to do: convert to general function
 
-shave, shave_key = alphabet_conversion(shave)
+#shave, shave_key = alphabet_conversion(shave)
 
 
     #product_key["Letter"] = letter_list
@@ -384,24 +393,28 @@ if track:
 
 #%%
 
-person_list = np.unique(id1)
-index_keep = []
-for i in range(len(person_list)):
-    person_prods = product_RUMM[id1==person_list[i]]
-    product_i = random.choice(person_prods.array)
-    person_index = id1[(id1==person_list[i]) & (product_RUMM==product_i)].index
-    index_keep.extend(person_index.values)
+approach4 = False
+
+if approach4:
+
+    person_list = np.unique(id1)
+    index_keep = []
+    for i in range(len(person_list)):
+        person_prods = product_RUMM[id1==person_list[i]]
+        product_i = random.choice(person_prods.array)
+        person_index = id1[(id1==person_list[i]) & (product_RUMM==product_i)].index
+        index_keep.extend(person_index.values)
     
-index_keep = np.array(index_keep)
-id1 = id1[index_keep]
-product_RUMM = product_RUMM[index_keep]
-shave = shave[index_keep]
-items = items.loc[index_keep,:]
+    index_keep = np.array(index_keep)
+    id1 = id1[index_keep]
+    product_RUMM = product_RUMM[index_keep]
+    shave = shave[index_keep]
+    items = items.loc[index_keep,:]
 
 
 #%%
 #remove extreme people from unique index list
-anchor = False
+anchor = True
 if anchor:
     extreme_index = extreme_persons.index
     id_index = id_original.index
@@ -415,10 +428,10 @@ if anchor:
     items_anchor = items.loc[unique_index,:]
     shave_anchor = shave[unique_index]          
     
-#% output final data set
+#%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, shave, product_RUMM, items], axis=1, ignore_index = True)
+RUMM_out = pd.concat([id1, shave, product_RUMM, items], axis=1, ignore_index = True)
 if anchor:
     RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
 
