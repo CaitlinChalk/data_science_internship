@@ -40,8 +40,10 @@ data6 = pd.read_excel('../Data2_Shaving/shave_numbers/shave6_results.xls',header
 data7 = pd.read_excel('../Data2_Shaving/shave_numbers/shave7_results.xls',header=None)
 data8 = pd.read_excel('../Data2_Shaving/shave_numbers/shave8_results.xls',header=None)
 data10 = pd.read_excel('../Data2_Shaving/shave_numbers/shave10_results.xls',header=None)
+data11 = pd.read_excel('../Data2_Shaving/chemistry_shaves_as_facets/10_shaves_chem_only_results.xls',header=None)
 
-data = [data1,data2,data3,data4,data5,data6,data7,data8,data10]
+#data = [data1,data2,data3,data4,data5,data6,data7,data8,data10]
+data = [data11]
 
 no_shaves = len(data)
 
@@ -79,7 +81,8 @@ if len(shaves) == 10:
 #%% plot histograms of product and item locations for the different shave numbers
 products_plot = False
 item_plot = False
-shave_plot = True
+shave_plot = False
+shave_item_plot = True
 save = True
 
 if products_plot:
@@ -299,5 +302,64 @@ if shave_plot:
         plt.savefig('Figures2/'+figname+'.jpg')
 
 
-       
+if shave_item_plot:
+    
+    fig,ax = plt.subplots(1,2,figsize=cm2inch(15,6))
+    
+    width = 0.85
+    
+    xmax = max(items[0].max(),shaves[0].max()) + 0.1
+    xmin = min(items[0].min(),shaves[0].min()) - 0.1
+    
+    labels = ('Item 1', 'Item 2' ,'Item 3', 'Item 4', 'Item 5', 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10')
+           
+    labels2 = ('Shave 1', 'Shave 2' ,'Shave 3', 'Shave 4', 'Shave 5', 'Shave 6', 'Shave 7', 'Shave 8', 'Shave 9', 'Shave 10')
+    
+    x = np.arange(len(labels))+1
+
+    for j in range(len(x)):
+        ax[0].bar(x[j],items[0].iloc[j],width,label=labels[j])
+    ax[0].set_xticks(list(range(1,11)))
+    ax[0].set_yticks([])
+    ax[0].tick_params(axis="x",labelsize=12)
+    ax[0].set_title('Items')
+    ax[0].set_ylim([xmin,xmax])
+    
+    x2 = np.arange(len(labels2))+1
+
+    for j in range(len(shaves[0])):
+        ax[1].bar(j+1,shaves[0].iloc[j],width,label='Shave '+str(j+1))
+    ax[1].set_xticks(list(range(1,11)))
+    ax[1].set_yticks([])
+    ax[1].tick_params(axis="x",labelsize=12)
+    ax[1].set_title('Shaves')
+    ax[1].set_ylim([xmin,xmax])
+    
+    ax[0].set_ylabel('Mean location (logits)',fontsize=12)
+    
+    plt.tight_layout()
+    fig.subplots_adjust(left=0.2)
+     
+    legend = False
+    if legend:
+        legend_outside = True
+    
+        if legend_outside:    
+            box = ax[0].get_position()
+            #ax[2,2].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            lgd = ax[0].legend(loc='upper center', bbox_to_anchor=(-0.45,1.1),
+                      fancybox=True, shadow=True)
+        else:
+            ax[0].legend(loc='best', fancybox=True, shadow=True)
+            font = {'family' : 'normal',
+                'weight' : 'normal',
+                'size'   : 12}
+
+        figname = 'approach4_chemistry'
+        matplotlib.rc('font', **font)
+    
+    if save:    
+
+        plt.savefig('Figures2/'+figname+'.pdf')
+        plt.savefig('Figures2/'+figname+'.jpg')
     
