@@ -12,6 +12,7 @@ from data_manipulation import remove_text
 from data_manipulation import remove_extremes
 from string import ascii_lowercase
 import random
+import math
 
 data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
 
@@ -48,6 +49,16 @@ def alphabet_conversion(df_in):
     
     return df_out, conversion_key
 
+#function to edit id by appending it with an extra number (corresponding to shave or product for example)
+#input: id2 - id series, addition - series containing factor to append to the id
+#output: new id
+def edit_id(id2,addition):
+    index1 = id2.index
+    id_new = [str(id2[index1[j]]) + str(addition[index1[j]]) for j in range(len(id2))]
+    id_new = pd.Series(id_new,index=index1)
+    id_new = id_new.astype(int)
+    
+    return id_new
 #%sort data
 #------------------------------------------------------------------------------
 select_aspect = True
@@ -147,7 +158,7 @@ if misfits:
     misfit_ID = misfit_ID1.append(misfit_ID2)
 
 #% remove extreme scores (i.e. people that put the same answer for everything)
-extremes = True
+extremes = False
 
 if extremes:
     items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
@@ -209,85 +220,84 @@ if sample:
 
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
         
-#% rack or stack the data
-stack = True
-id_edit_prod = True
-if stack: #stack the data
+#%% rack or stack the data
+stack = False
+rack = False
+id_edit = False
+if stack or rack: #stack the data
     id_original = id1.copy()
-    shave_select = [10,9,8,7,6,5,4,3,2,1]
+    shave_select = [1,2]
     for i in range(len(shave_select)):  
         if i == 0: #initialise stack
-            id_stack = id1[shave==shave_select[i]]
-            #edit id for repeated shaves by adding the shave or product number number afterwards            
-            index1 = id_stack.index
-            if id_edit_prod:
-                id_edit = product_RUMM
-            else:
-                id_edit = shave
-            id_stack = [str(id_stack[index1[j]]) + str(id_edit[index1[j]]) for j in range(len(id_stack))]
-            id_stack = pd.Series(id_stack,index=index1)
-            id_stack = id_stack.astype(int)
+            id_stack = id1[shave==shave_select[i]].copy()
+            if id_edit:
+                id_stack = edit_id(id_stack,product_RUMM)                        
+            product_stack = product_RUMM[shave==shave_select[i]].copy()
+            item_stack = items[shave==shave_select[i]].copy()
+            shave_stack = shave[shave==shave_select[i]].copy()
             
-            product_stack = product_RUMM[shave==shave_select[i]]
-            item_stack = items[shave==shave_select[i]]
-            shave_stack = shave[shave==shave_select[i]]  
+            if rack:
+                id_stack.rename("assessor0",inplace=True)
+                new_index = list(range(len(id_stack)))
+                index_dict = dict(zip(id_stack.index,new_index))
+                id_stack.rename(index_dict,inplace=True)
+                item_stack.rename(index_dict,inplace=True)
+                shave_stack.rename(index_dict,inplace=True)
+                product_stack.rename(index_dict,inplace=True)
         
         if i > 0:
             #edit id for repeated shaves by adding the shave number afterwards
-            id_stack1 = id1[shave==shave_select[i]]
-            index1 = id_stack1.index
-            if id_edit_prod:
-                id_edit = product_RUMM
-            else:
-                id_edit = shave
-            id_stack1 = [str(id_stack1[index1[j]]) + str(id_edit[index1[j]]) for j in range(len(id_stack1))]
-            id_stack1 = pd.Series(id_stack1,index=index1)
-            id_stack1 = id_stack1.astype(int)
+            id_stack1 = id1[shave==shave_select[i]].copy()
+            product_stack1 = product_RUMM[shave==shave_select[i]].copy()
+            item_stack1 = items[shave==shave_select[i]].copy()
+            shave_stack1 = shave[shave==shave_select[i]].copy()
             
-            id_stack = pd.concat([id_stack,id_stack1])
-            product_stack = pd.concat([product_stack,product_RUMM[shave==shave_select[i]]])
-            item_stack = pd.concat([item_stack,items[shave==shave_select[i]]])
-            shave_stack = pd.concat([shave_stack,shave[shave==shave_select[i]]])
+            if rack:
+                new_index = list(range(len(id_stack1)))
+                index_dict = dict(zip(id_stack1.index,new_index))
+                id_stack1.rename(index_dict,inplace=True)
+                item_stack1.rename(index_dict,inplace=True)
+                shave_stack1.rename(index_dict,inplace=True)
+                product_stack1.rename(index_dict,inplace=True)
+                        
+            if id_edit:
+                id_stack1 = edit_id(id_stack1,product_RUMM)
+            if stack:
+                axis_i = 0
+            if rack:
+                axis_i = 1
+            id_stack = pd.concat([id_stack,id_stack1],axis=axis_i)
+            product_stack = pd.concat([product_stack,product_stack1],axis=axis_i)
+            item_stack = pd.concat([item_stack,item_stack1],axis=axis_i)
+            shave_stack = pd.concat([shave_stack,shave_stack1],axis=axis_i)
         
     id1 = id_stack.copy()
     product_RUMM = product_stack.copy()
     items = item_stack.copy()
     shave = shave_stack.copy()
-
-#% convert numerical data to string and replace numbers with letters
-        #to do: convert to general function
-
+    
+rack2 = True
+if rack2:
+    id_original = id1.copy()
+    shave_select = [1,2]
+    id_shave1 = id1[shave==shave_select[0]]
+    id_shave2 = id1[shave==shave_select[1]]
+    #new_index = list(range(len(id_stack)))
+    index_dict = dict(zip(id_shave2.index,id_shave1.index))
+    id_shave2.rename(index_dict,inplace=True)
+    take_larger = lambda s1, s2: s1 if s1 == s2 else math.nan
+    test = id_shave1.combine(id_shave2,take_larger)
+    
+   
+         
+    
+    #for i in range(len(id_select)):
+        
+    
+    
+# convert numerical data to string and replace numbers with letters
 #shave, shave_key = alphabet_conversion(shave)
 
-
-    #product_key["Letter"] = letter_list
-
-#shave_list = np.unique(shave)
-#shave = shave.apply(str) #convert to string  
-#for i in range(len(shave_list)):
-#    letter = alphabet[i]
-#    shave.replace(str(i+1),letter,inplace=True)
-
-
-#% select each person at random over all 10 shaves
-
-#select_every_person = False
-
-#if select_every_person:
-#    person_index = []
-#    for j in range(len(shave_select)):
-#        id_temp = id1[shave==shave_select[j]]
-#        id_list = np.unique(id_temp)
-#        for i in range(len(id_list)):
-#            person = id_temp[id_temp==id_list[i]].index
-#            selection = random.choice(person)
-#            person_index.append(selection)
-
- #   id1 = id1[person_index]
- #   product_RUMM = product_RUMM[person_index]
- #   shave = shave[person_index]
- #   items = items.loc[person_index,:]
- 
     
 #%%stack the same people rating the same products, for each shave number
 track = False
@@ -412,14 +422,17 @@ if approach4:
     items = items.loc[index_keep,:]
 
 
+id1, id_original = edit_id(id1,product_RUMM)
+
 #%%
 #remove extreme people from unique index list
-anchor = True
+anchor = False
 if anchor:
-    extreme_index = extreme_persons.index
-    id_index = id_original.index
-    id_ignore = id_index.isin(extreme_index)
-    id_ignore = id_index[id_ignore]
+    if extremes:
+        extreme_index = extreme_persons.index
+        id_index = id_original.index
+        id_ignore = id_index.isin(extreme_index)
+        id_ignore = id_index[id_ignore]
 
     unique_index = select_every_person(shave_select,id_original)
 
@@ -431,7 +444,7 @@ if anchor:
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, shave, product_RUMM, items], axis=1, ignore_index = True)
+RUMM_out = pd.concat([id1, id1, shave, product_RUMM, items], axis=1, ignore_index = True)
 if anchor:
     RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
 
