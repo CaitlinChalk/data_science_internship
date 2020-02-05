@@ -4,10 +4,13 @@ Created on Tue Nov 26 15:09:00 2019
 
 @author: matcc
 """
+import os
 import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+
+os.chdir("M:\LIDA_internship\project1\python_scripts")
 
 #convert figsize from cm to inches
 def cm2inch(*tupl):
@@ -40,14 +43,15 @@ data6 = pd.read_excel('../Data2_Shaving/shave_numbers/shave6_results.xls',header
 data7 = pd.read_excel('../Data2_Shaving/shave_numbers/shave7_results.xls',header=None)
 data8 = pd.read_excel('../Data2_Shaving/shave_numbers/shave8_results.xls',header=None)
 data10 = pd.read_excel('../Data2_Shaving/shave_numbers/shave10_results.xls',header=None)
-data11 = pd.read_excel('../Data2_Shaving/chemistry_shaves_as_facets/10_shaves_chem_only_results.xls',header=None)
+data11 = pd.read_excel('../Data2_Shaving/chemistry_shaves_as_facets/10_shaves_all_aspects_results.xls',header=None)
 
-#data = [data1,data2,data3,data4,data5,data6,data7,data8,data10]
-data = [data11]
+data = [data1,data2,data3,data4,data5,data6,data7,data8,data10]
+#data = [data11]
 
 no_shaves = len(data)
 
 shaves = {name: pd.DataFrame for name in range(no_shaves)}
+controls = {name: pd.DataFrame for name in range(no_shaves)}
 items = {name: pd.DataFrame for name in range(no_shaves)}
 
 for i in range(no_shaves):
@@ -55,10 +59,24 @@ for i in range(no_shaves):
     items[i] = data[i].iloc[:,2]
     index_dict = dict(zip(shaves[i].index,data[i].iloc[:,6]))
     shaves[i].rename(index_dict,inplace=True)
+    
+separate_controls = True
+
+if separate_controls:
+    control_index = {name: [] for name in range(no_shaves)}
+    for i in range(no_shaves):
+        index2 = shaves[i].dropna().index.copy()
+        for j in range(len(index2)):            
+            if 'control' in index2[j]:
+                idb = index2.get_loc(index2[j])
+                control_index[i].append(idb)
+        
+        controls[i] = shaves[i][control_index[i]]
+        shaves[i].drop(shaves[i][control_index[i]].index,inplace=True)
 
 #%% three facet analysis
     
-data =   pd.read_excel('../Data2_Shaving/shave_numbers/shave1_3_results.xls',header=None)  
+data =   pd.read_excel('../Data2_Shaving/shave_numbers/shave1_3_resultsb.xls',header=None)  
 products = data.iloc[:,7]
 items = data.iloc[:,2]
 shaves = data.iloc[:,12]
@@ -78,12 +96,25 @@ if len(shaves) == 10:
     index_dict = dict(zip(products.index,new_index))
     products.rename(index_dict,inplace=True)
     
+separate_controls = True
+    
+if separate_controls:
+    control_index = []
+    index2 = products.index
+    for i in range(len(products)):
+        if 'con' in index2[i]:
+            idb = index2.get_loc(index2[i])
+            control_index.append(idb)
+            
+    controls = products[control_index]
+    products.drop(products[control_index].index,inplace=True)
+    
 #%% plot histograms of product and item locations for the different shave numbers
 products_plot = False
 item_plot = False
-shave_plot = False
-shave_item_plot = True
-save = True
+shave_plot = True
+shave_item_plot = False
+save = False
 
 if products_plot:
     labels = ['Control 18','Product 2', 'Product 31', 'Control 32', 'Product 32', 'Control 2', 'Control 29',
@@ -101,37 +132,67 @@ if products_plot:
     xmin = -0.5
     xmax = 13.5
     
-    l=0
-    k=0
-    for i in range(no_shaves):
-        if i < 3:
-            ax[k,l].bar([0,1],[shaves[i].loc['product2'],shaves[i].loc['control2']],width,label='Product 2',edgecolor=['black','none'],linewidth=[1,0],
+    if not separate_controls:
+        l=0
+        k=0
+        for i in range(no_shaves):
+            if i < 3:
+                ax[k,l].bar([0,1],[shaves[i].loc['product2'],shaves[i].loc['control2']],width,label='Product 2',edgecolor=['black','none'],linewidth=[1,0],
               color='dodgerblue')
-        if i < 5:
-            ax[k,l].bar([2,3],[shaves[i].loc['product31'],shaves[i].loc['control31']],width,label='Product 31',edgecolor=['black','none'],linewidth=[1,0],
+            if i < 5:
+                ax[k,l].bar([2,3],[shaves[i].loc['product31'],shaves[i].loc['control31']],width,label='Product 31',edgecolor=['black','none'],linewidth=[1,0],
               color='orange')
-            ax[k,l].bar([4,5],[shaves[i].loc['product32'],shaves[i].loc['control32']],width,label='Product 32',edgecolor=['black','none'],linewidth=[1,0],
+                ax[k,l].bar([4,5],[shaves[i].loc['product32'],shaves[i].loc['control32']],width,label='Product 32',edgecolor=['black','none'],linewidth=[1,0],
               color='limegreen')
-        ax[k,l].bar([6,7],[shaves[i].loc['product19'],shaves[i].loc['control19']],width,label='Product 19',edgecolor=['black','none'],linewidth=[1,0],
-          color='red')
-        ax[k,l].bar([8,9],[shaves[i].loc['product18'],shaves[i].loc['control18']],width,label='Product 18',edgecolor=['black','none'],linewidth=[1,0],
-          color='mediumslateblue')
-        if i < 5:
-            ax[k,l].bar([10,11],[shaves[i].loc['product29'],shaves[i].loc['control29']],width,label='Product 29',edgecolor=['black','none'],linewidth=[1,0],
+            ax[k,l].bar([6,7],[shaves[i].loc['product19'],shaves[i].loc['control19']],width,label='Product 19',edgecolor=['black','none'],linewidth=[1,0],
+                  color='red')
+            ax[k,l].bar([8,9],[shaves[i].loc['product18'],shaves[i].loc['control18']],width,label='Product 18',edgecolor=['black','none'],linewidth=[1,0],
+              color='mediumslateblue')
+            if i < 5:
+                ax[k,l].bar([10,11],[shaves[i].loc['product29'],shaves[i].loc['control29']],width,label='Product 29',edgecolor=['black','none'],linewidth=[1,0],
               color='saddlebrown')
-        ax[k,l].bar([12,13],[shaves[i].loc['product6'],shaves[i].loc['control6']],width,label='Product 6',edgecolor=['black','none'],linewidth=[1,0],
+            ax[k,l].bar([12,13],[shaves[i].loc['product6'],shaves[i].loc['control6']],width,label='Product 6',edgecolor=['black','none'],linewidth=[1,0],
           color='magenta')
-        ax[k,l].set_xticks([])
-        ax[k,l].set_yticks([])
-        ax[k,l].tick_params(axis="y",labelsize=8)
-        ax[k,l].set_xlim([xmin,xmax])
-        ax[k,l].set_title('Shave ' + str(i+1))
-        if i == 8:
-            ax[k,l].set_title('Shave 10')
-        l=l+1
-        if l == 3:
-            l=0
-            k=k+1
+            ax[k,l].set_xticks([])
+            ax[k,l].set_yticks([])
+            ax[k,l].tick_params(axis="y",labelsize=8)
+            ax[k,l].set_xlim([xmin,xmax])
+            ax[k,l].set_title('Shave ' + str(i+1))
+            if i == 8:
+                ax[k,l].set_title('Shave 10')
+            l=l+1
+            if l == 3:
+                l=0
+                k=k+1
+            
+    if separate_controls:   
+        l=0
+        k=0
+        xmax = 7.5
+        for i in range(no_shaves):
+            if i < 3:
+                ax[k,l].bar(0,shaves[i].loc['product2'],width,label='Product 2', color='dodgerblue')
+            if i < 5:
+                ax[k,l].bar(1,shaves[i].loc['product31'],width,label='Product 31',color='orange')
+                ax[k,l].bar(2,shaves[i].loc['product32'],width,label='Product 32',color='limegreen')
+            ax[k,l].bar(3,shaves[i].loc['product19'],width,label='Product 19',color='red')
+            ax[k,l].bar(4,shaves[i].loc['product18'],width,label='Product 18',color='mediumslateblue')            
+            if i < 5:
+                ax[k,l].bar(5,shaves[i].loc['product29'],width,label='Product 29',color='saddlebrown')
+            ax[k,l].bar(6,shaves[i].loc['product6'],width,label='Product 6',color='magenta')
+            ax[k,l].bar(7,controls[i].mean(),width,label='Control 2',color='black')
+            ax[k,l].set_xticks([])
+            ax[k,l].set_yticks([])
+            ax[k,l].tick_params(axis="y",labelsize=8)
+            ax[k,l].set_xlim([xmin,xmax])
+            ax[k,l].set_title('Shave ' + str(i+1))
+            if i == 8:
+                ax[k,l].set_title('Shave 10')
+            l=l+1
+            if l == 3:
+                l=0
+                k=k+1
+    
 
     plt.tight_layout()
     fig.subplots_adjust(right=0.8)
@@ -153,7 +214,7 @@ if products_plot:
                 'weight' : 'normal',
                 'size'   : 12}
 
-    figname = 'shaves'
+    figname = 'shavesb'
     matplotlib.rc('font', **font)
     
     if save:    
@@ -227,23 +288,40 @@ if shave_plot:
     xmin = min(items.min(),shaves.min(),products.min()) - 0.1
     
     #plot products
-    if len(shaves)<10:
-        ax[0].bar([0,1],[products.loc['prod32'],products.loc['con32']],width,label='Product 32',edgecolor=['black','none'],linewidth=[1,0],
+    if not separate_controls:
+        if len(shaves)<10:
+            ax[0].bar([0,1],[products.loc['prod32'],products.loc['con32']],width,label='Product 32',edgecolor=['black','none'],linewidth=[1,0],
               color='limegreen')
-        ax[0].bar([2,3],[products.loc['prod31'],products.loc['con31']],width,label='Product 31',edgecolor=['black','none'],linewidth=[1,0],
+            ax[0].bar([2,3],[products.loc['prod31'],products.loc['con31']],width,label='Product 31',edgecolor=['black','none'],linewidth=[1,0],
               color='orange')
-    if len(shaves)==3:
-        ax[0].bar([4,5],[products.loc['prod2'],products.loc['con2']],width,label='Product 2',edgecolor=['black','none'],linewidth=[1,0],
+        if len(shaves)==3:
+            ax[0].bar([4,5],[products.loc['prod2'],products.loc['con2']],width,label='Product 2',edgecolor=['black','none'],linewidth=[1,0],
               color='dodgerblue')
-    ax[0].bar([6,7],[products.loc['prod19'],products.loc['con19']],width,label='Product 19',edgecolor=['black','none'],linewidth=[1,0],
+        ax[0].bar([6,7],[products.loc['prod19'],products.loc['con19']],width,label='Product 19',edgecolor=['black','none'],linewidth=[1,0],
           color='red')
-    ax[0].bar([8,9],[products.loc['prod6'],products.loc['con6']],width,label='Product 6',edgecolor=['black','none'],linewidth=[1,0],
+        ax[0].bar([8,9],[products.loc['prod6'],products.loc['con6']],width,label='Product 6',edgecolor=['black','none'],linewidth=[1,0],
           color='magenta')
-    if len(shaves)<10:
-        ax[0].bar([10,11],[products.loc['prod29'],products.loc['con29']],width,label='Product 29',edgecolor=['black','none'],linewidth=[1,0],
+        if len(shaves)<10:
+            ax[0].bar([10,11],[products.loc['prod29'],products.loc['con29']],width,label='Product 29',edgecolor=['black','none'],linewidth=[1,0],
               color='saddlebrown')
-    ax[0].bar([12,13],[products.loc['prod18'],products.loc['con18']],width,label='Product 18',edgecolor=['black','none'],linewidth=[1,0],
+        ax[0].bar([12,13],[products.loc['prod18'],products.loc['con18']],width,label='Product 18',edgecolor=['black','none'],linewidth=[1,0],
           color='mediumslateblue')
+     
+    if separate_controls:
+        if len(shaves)<10:
+            ax[0].bar(0,products.loc['prod32'],width,label='Product 32',color='limegreen')
+            ax[0].bar(1,products.loc['prod31'],width,label='Product 31',color='orange')
+        if len(shaves)==3:
+            ax[0].bar(2,products.loc['prod2'],width,label='Product 2',color='dodgerblue')
+        ax[0].bar(3,products.loc['prod19'],width,label='Product 19', color='red')
+        ax[0].bar(4,products.loc['prod6'],width,label='Product 6',color='magenta')
+        if len(shaves)<10:
+            ax[0].bar(5,products.loc['prod29'],width,label='Product 29',color='saddlebrown')
+        ax[0].bar(6,products.loc['prod18'],width,label='Product 18',color='mediumslateblue')  
+        ax[0].bar(7,controls.mean(),width,label='Control 2',color='black')
+        
+        
+        
     ax[0].set_title('Products')
     ax[0].set_yticks([])
     ax[0].set_xticks([])
@@ -293,7 +371,7 @@ if shave_plot:
                 'weight' : 'normal',
                 'size'   : 12}
 
-    figname = '3shaves'
+    figname = '10shavesb'
     matplotlib.rc('font', **font)
     
     if save:    
@@ -351,12 +429,12 @@ if shave_item_plot:
                       fancybox=True, shadow=True)
         else:
             ax[0].legend(loc='best', fancybox=True, shadow=True)
-            font = {'family' : 'normal',
+    font = {'family' : 'normal',
                 'weight' : 'normal',
                 'size'   : 12}
 
-        figname = 'approach4_chemistry'
-        matplotlib.rc('font', **font)
+    figname = 'approach4_all_aspects'
+    matplotlib.rc('font', **font)
     
     if save:    
 
