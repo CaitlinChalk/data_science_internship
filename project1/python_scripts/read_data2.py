@@ -4,6 +4,10 @@ raw data structure:
     usual brand, laundry habits, misc opinions (inc overall rating), ratings, agreements, attitudes, Person Factors
 """
 
+import os
+
+os.chdir("M:\LIDA_internship\project1\python_scripts")
+
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -108,10 +112,10 @@ if save_pattern:
 
 #% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
-prod_only = ['Prod 6','Prod 18', 'Prod 19','Prod 2','Prod 29','Prod 31','Prod 32']
-prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control', 'Prod 2 Control', 'Prod 29 Control', 'Prod 31 Control', 'Prod 32 Control']
+prod_only = ['Prod 6','Prod 18', 'Prod 19']
+prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control']
 
-prods = np.unique(product)
+#prods = np.unique(product)
 remove_controls = False
 
 if remove_controls:    
@@ -207,7 +211,6 @@ for i in range(len(items_del)):
     items.drop(columns=col, inplace=True)
     
 
-
 sample = False
 if sample:
     fac = [2] #facet number to sample        
@@ -220,13 +223,14 @@ if sample:
 
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
         
-#%% rack or stack the data
+#% rack or stack the data
 stack = False
-rack = False
-id_edit = False
-if stack or rack: #stack the data
+rack = True
+id_edit = False #True if you want to edit the IDs corresponding to the different shaves or products
+if stack: #stack the data, by having the data for different shaves stacked on top of each other
+                 #the length of the data increases, while the width stays the same
     id_original = id1.copy()
-    shave_select = [1,2]
+    shave_select = [1,2] #corresponding to the stacked data
     for i in range(len(shave_select)):  
         if i == 0: #initialise stack
             id_stack = id1[shave==shave_select[i]].copy()
@@ -235,15 +239,6 @@ if stack or rack: #stack the data
             product_stack = product_RUMM[shave==shave_select[i]].copy()
             item_stack = items[shave==shave_select[i]].copy()
             shave_stack = shave[shave==shave_select[i]].copy()
-            
-            if rack:
-                id_stack.rename("assessor0",inplace=True)
-                new_index = list(range(len(id_stack)))
-                index_dict = dict(zip(id_stack.index,new_index))
-                id_stack.rename(index_dict,inplace=True)
-                item_stack.rename(index_dict,inplace=True)
-                shave_stack.rename(index_dict,inplace=True)
-                product_stack.rename(index_dict,inplace=True)
         
         if i > 0:
             #edit id for repeated shaves by adding the shave number afterwards
@@ -251,54 +246,89 @@ if stack or rack: #stack the data
             product_stack1 = product_RUMM[shave==shave_select[i]].copy()
             item_stack1 = items[shave==shave_select[i]].copy()
             shave_stack1 = shave[shave==shave_select[i]].copy()
-            
-            if rack:
-                new_index = list(range(len(id_stack1)))
-                index_dict = dict(zip(id_stack1.index,new_index))
-                id_stack1.rename(index_dict,inplace=True)
-                item_stack1.rename(index_dict,inplace=True)
-                shave_stack1.rename(index_dict,inplace=True)
-                product_stack1.rename(index_dict,inplace=True)
                         
             if id_edit:
                 id_stack1 = edit_id(id_stack1,product_RUMM)
-            if stack:
-                axis_i = 0
-            if rack:
-                axis_i = 1
-            id_stack = pd.concat([id_stack,id_stack1],axis=axis_i)
-            product_stack = pd.concat([product_stack,product_stack1],axis=axis_i)
-            item_stack = pd.concat([item_stack,item_stack1],axis=axis_i)
-            shave_stack = pd.concat([shave_stack,shave_stack1],axis=axis_i)
+
+            id_stack = pd.concat([id_stack,id_stack1],axis=0)
+            product_stack = pd.concat([product_stack,product_stack1],axis=0)
+            item_stack = pd.concat([item_stack,item_stack1],axis=0)
+            shave_stack = pd.concat([shave_stack,shave_stack1],axis=0)
         
     id1 = id_stack.copy()
     product_RUMM = product_stack.copy()
     items = item_stack.copy()
     shave = shave_stack.copy()
     
-rack2 = True
-if rack2:
+#rack the data, by having the data from different shaves adjacent to each other
+#%the length of the data stays the same, while the width increases
+if rack:
     id_original = id1.copy()
-    shave_select = [1,2]
-    id_shave1 = id1[shave==shave_select[0]]
-    id_shave2 = id1[shave==shave_select[1]]
-    #new_index = list(range(len(id_stack)))
-    index_dict = dict(zip(id_shave2.index,id_shave1.index))
-    id_shave2.rename(index_dict,inplace=True)
-    take_larger = lambda s1, s2: s1 if s1 == s2 else math.nan
-    test = id_shave1.combine(id_shave2,take_larger)
+    shave_select = [2,10]    
+    id_list = np.unique(id_original)
+    index_both = []
+    index0 = []
+    index1 = []
+    #extract the IDs of the people who have completed both shaves, and those who have completed one or the other only
+    for i in range(len(id_list)):
+        product_list = np.unique(product_RUMM[id1==id_list[i]])
+        for j in range(len(product_list)):
+            shave_list = shave[(id1==id_list[i]) & (product_RUMM==product_list[j])]
+            if shave_select[0] in shave_list.array and shave_select[1] in shave_list.array:
+                index_j = shave_list[shave_list.isin([shave_select[0],shave_select[1]])].index
+                index_both.extend(index_j)
+            if shave_select[0] in shave_list.array and not shave_select[1] in shave_list.array:
+                index_j = shave_list[shave_list.isin([shave_select[0]])].index
+                index0.extend(index_j)
+            if not shave_select[0] in shave_list.array and shave_select[1] in shave_list.array:
+                index_j = shave_list[shave_list.isin([shave_select[1]])].index
+                index1.extend(index_j)
+#%
+    #concat shaves 1 and 2 for the data containing both
+    #add rows of NaNs to data that contains one of the two shaves only
+    #both shaves:
+    items0 = items[shave==shave_select[0]].copy()
+    items1 = items[shave==shave_select[1]].copy()
+#%    
+    #edit column names for the second set of items
+    shave1_items = items1.columns
+    new_name = shave1_items + 'b' #add b to each item in the second set
+    col_dict = dict(zip(shave1_items,new_name))
+    items1.rename(columns=col_dict,inplace=True)
     
-   
-         
+    #extract the items which correspond to people who completed both shaves
+    item_rack0 = items0[items0.index.isin(index_both)].copy() #shave 1
+    item_rack1 = items1[items1.index.isin(index_both)].copy() #shave 2
     
-    #for i in range(len(id_select)):
-        
+    #reindex data for horizontal concatenation
+    index_dict = dict(zip(item_rack1.index,item_rack0.index))
+    item_rack1.rename(index_dict,inplace=True)
     
+    #append data for shave 1 or 2 (for the people who haven't answered both)
+    if len(index0) > 0:
+        item_rack0 = pd.concat([item_rack0,items0[items0.index.isin(index0)]],axis=0)
+    if len(index1) > 0:
+        item_rack1 = pd.concat([item_rack1,items1[items1.index.isin(index1)]],axis=0)
     
-# convert numerical data to string and replace numbers with letters
-#shave, shave_key = alphabet_conversion(shave)
+    #horizontally concatenate the data from the different shaves    
+    item_rack = pd.concat([item_rack0,item_rack1],axis=1)   
+    
+    #corresponding ids and products for the racked data:
+    id_rack = id1[item_rack.index].copy()
+    product_rack = product_RUMM[item_rack.index].copy()
+    shave_rack = shave[item_rack.index].copy()
+    
+    #copy racked data to output data
+    id1 = id_rack.copy()
+    product_RUMM = product_rack.copy()
+    shave = shave_rack.copy()
+    items = item_rack.copy()
 
+
+#convert product key to alphabetical
     
+product_RUMM, product_key2 = alphabet_conversion(product_RUMM)
+   
 #%%stack the same people rating the same products, for each shave number
 track = False
 if track:
@@ -422,7 +452,7 @@ if approach4:
     items = items.loc[index_keep,:]
 
 
-id1, id_original = edit_id(id1,product_RUMM)
+#id1, id_original = edit_id(id1,product_RUMM)
 
 #%%
 #remove extreme people from unique index list
@@ -444,7 +474,7 @@ if anchor:
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, shave, product_RUMM, items], axis=1, ignore_index = True)
+RUMM_out = pd.concat([id1, id1, product_RUMM, items], axis=1, ignore_index = True)
 if anchor:
     RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
 
