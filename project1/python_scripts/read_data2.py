@@ -6,7 +6,7 @@ raw data structure:
 
 import os
 
-os.chdir("M:\LIDA_internship\project1\python_scripts")
+os.chdir("Documents\data_science_internship\project1\python_scripts")
 
 import pandas as pd
 import numpy as np
@@ -18,7 +18,7 @@ from string import ascii_lowercase
 import random
 import math
 
-data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
+data = pd.read_excel('../Rasch_Analysis/Data2_Shaving/shaving_data.xlsx') #read raw data
 
 #functions
 #function to select person at random over every shave
@@ -76,10 +76,10 @@ shave = data.loc[:,"Shave Number"] #number of shave (of multiple, per person)
 aspect = data.loc[:,"Test Aspect"]
 
 #% select one shave only
-single_shave = False
+single_shave = True
 
 if single_shave:
-    shave_no = [1,2,3]
+    shave_no = [2]
 
     id1 = id1[shave.isin(shave_no)]
     items = items[shave.isin(shave_no)]
@@ -112,8 +112,8 @@ if save_pattern:
 
 #% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
-prod_only = ['Prod 6','Prod 18', 'Prod 19']
-prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control']
+prod_only = ['Prod 6','Prod 18', 'Prod 19', 'Prod 2', 'Prod 31', 'Prod 32']
+prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control','Prod 2 Control','Prod 31 Control','Prod 32 Control']
 
 #prods = np.unique(product)
 remove_controls = False
@@ -133,9 +133,51 @@ if len(prods) < len(np.unique(product)):
     items = items[facet_select] 
     aspect = aspect[facet_select]
     shave = shave[facet_select]
-    
-#% convert product to RUMM format
 
+#%% change item responses to pairwise 
+    
+pairwise = True
+if pairwise:
+    items2 = items.copy()    
+    for i in range(len(np.unique(id1))):
+        prod_i = product[id1==id1.iloc[i]]
+        con_only = prod_i[prod_i.str.contains('Control')] #controls only
+        prod_only = prod_i[~prod_i.str.contains('Control')] #test products only
+        prod_list = np.unique(prod_only) #list of unique test products
+        for j in range(len(prod_only)):
+            control = prod_only.iloc[j] + ' Control'
+            index1 = prod_only[prod_only==prod_only.iloc[j]].index[0]
+            if control in prod_i.array:
+                index2 = prod_i[prod_i==control].index[0]
+                item1 = items.loc[index1,:]
+                item2 = items.loc[index2,:]
+                cond1 = item1 > item2
+                cond2 = item2 > item1
+                cond3 = item1 == item2
+                if len(cond1) > 0: #if test prod > control
+                    items2.replace(items2.loc[index1,:][cond1],1,inplace=True) #test product score is higher than control
+                    items2.replace(items2.loc[index2,:][cond1],0,inplace=True) #control product score is less than test
+                if len(cond2) > 0: #if test prod > control
+                    items2.replace(items2.loc[index1,:][cond2],0,inplace=True) #control product score is less than test 
+                    items2.replace(items2.loc[index2,:][cond2],1,inplace=True) #test product score is higher than control
+                if len(cond3) > 0: #if test prod = control prod
+                    equals = np.unique(item1[cond3])
+                    for k in range(len(equals)):
+                        ans = item1[cond3][item1[cond3]==item1[cond3].iloc[k]]
+                        ans_Q = item1[cond3][item1[cond3]==item1[cond3].iloc[k]].index
+                        if ans.iloc[0] <= 3:
+                            items2.replace(items2.loc[index1,:][ans_Q],0,inplace=True)
+                            items2.replace(items2.loc[index2,:][ans_Q],0,inplace=True)
+                        else:
+                            items2.replace(items2.loc[index1,:][ans_Q],1,inplace=True)
+                            items2.replace(items2.loc[index2,:][ans_Q],1,inplace=True)
+            else:
+                items2.drop(index1)
+        
+        
+
+    
+#%% convert product to RUMM format
 #products   
 product_RUMM, product_key = convert2RUMM(product,0) #function to convert PF data into RUMM format
 
@@ -173,7 +215,7 @@ if extremes:
     product_RUMM = product_RUMM[items.index]
     shave = shave[items.index]
 
-rescore = True
+rescore = False
 
 if rescore:
     items.replace(1,0,inplace=True)
@@ -190,6 +232,7 @@ if rescore:
         #id1 = id1[items.index]
         #product_RUMM = product_RUMM[items.index]
         #shave = shave[items.index]
+
             
 replace = False
 
