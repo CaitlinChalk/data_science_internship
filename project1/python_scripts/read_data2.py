@@ -194,7 +194,7 @@ pairwise2 = True
 #restructure data to be in pairwise format
 if pairwise2:
     items2 = items.copy()  
-    Q_list = items.columns
+    Q_list = items.copy().columns
     id_list = np.unique(id1)
     n_items = len(items.columns)
     col_names = prod_only.copy()
@@ -204,6 +204,7 @@ if pairwise2:
     col_names.append('Item')
     rows = row_names*len(id_list)*n_items
     data2 = pd.DataFrame(index=rows, columns=col_names)
+    data_pw = pd.DataFrame(columns=['Item1','Item2','Preferred','ID','Question'])
     k=0
     for m in range(n_items):        
         for i in range(len(id_list)):
@@ -225,9 +226,11 @@ if pairwise2:
                     if item1>item2:
                         data_snip.loc[col1,col2] = 1
                         data_snip.loc[col2,col1] = 0
+                        data_pw = data_pw.append({'Item1': prod1, 'Item2': prod2, 'Preferred': prod1, 'ID': id_list[i], 'Question': m+1},ignore_index=True)
                     if item2>item1:
                         data_snip.loc[col2,col1] = 1
                         data_snip.loc[col1,col2] = 0
+                        data_pw = data_pw.append({'Item1': prod1, 'Item2': prod2, 'Preferred': prod2, 'ID': id_list[i], 'Question': m+1},ignore_index=True)
                     if item2==item1:
                         if item1 <= 3:
                             data_snip.loc[col1,col2] = 0
@@ -296,6 +299,12 @@ product_RUMM, product_key = convert2RUMM(product,0) #function to convert PF data
 #aspects
 PF_RUMM, PF_key = convert2RUMM(aspect,0) 
 #%
+
+#pairwise
+
+data_pw.iloc[:,0:3], product_key = convert2RUMM(data_pw.iloc[:,0:3],0)
+
+#%%
 
 misfit_ID = []
 
