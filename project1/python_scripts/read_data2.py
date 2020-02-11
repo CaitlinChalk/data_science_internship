@@ -6,7 +6,7 @@ raw data structure:
 
 import os
 
-os.chdir("Documents\data_science_internship\project1\python_scripts")
+os.chdir("M:\\LIDA_internship\\project1\\python_scripts")
 
 import pandas as pd
 import numpy as np
@@ -18,7 +18,7 @@ from string import ascii_lowercase
 import random
 import math
 
-data = pd.read_excel('../Rasch_Analysis/Data2_Shaving/shaving_data.xlsx') #read raw data
+data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
 
 #functions
 #function to select person at random over every shave
@@ -136,46 +136,158 @@ if len(prods) < len(np.unique(product)):
 
 #%% change item responses to pairwise 
     
-pairwise = True
-if pairwise:
-    items2 = items.copy()    
-    for i in range(len(np.unique(id1))):
-        prod_i = product[id1==id1.iloc[i]]
+pairwise1 = False
+if pairwise1:
+    items2 = items.copy()  
+    id_list = np.unique(id1)
+    index_del = [] #to keep track of removed indices
+    for i in range(len(id_list)):
+        prod_i = product[id1==id_list[i]]
         con_only = prod_i[prod_i.str.contains('Control')] #controls only
         prod_only = prod_i[~prod_i.str.contains('Control')] #test products only
         prod_list = np.unique(prod_only) #list of unique test products
+        #remove control product if there is no corresponding test product
+        if len(con_only) > len(prod_only): #if there are more control product responses than test product responses
+            for k in range(len(con_only)):
+                product_k = con_only.iloc[k].strip(' Control') #name of test product
+                if not product_k in prod_only.array: #if corresponding test product isn't in survey data
+                    index2 = prod_i[prod_i==con_only.iloc[k]].index[0]
+                    items2.drop(index2,inplace=True) #remove control product
+                    index_del.append(index2)
         for j in range(len(prod_only)):
             control = prod_only.iloc[j] + ' Control'
             index1 = prod_only[prod_only==prod_only.iloc[j]].index[0]
             if control in prod_i.array:
                 index2 = prod_i[prod_i==control].index[0]
-                item1 = items.loc[index1,:]
-                item2 = items.loc[index2,:]
+                item1 = items.loc[index1,:] #test product responses
+                item2 = items.loc[index2,:] #control product responses
                 cond1 = item1 > item2
                 cond2 = item2 > item1
                 cond3 = item1 == item2
                 if len(cond1) > 0: #if test prod > control
-                    items2.replace(items2.loc[index1,:][cond1],1,inplace=True) #test product score is higher than control
-                    items2.replace(items2.loc[index2,:][cond1],0,inplace=True) #control product score is less than test
+                    items2.loc[index1,cond1[cond1].index]=1#test product score is higher than control
+                    items2.loc[index2,cond1[cond1].index]=0 #control product score is less than test
                 if len(cond2) > 0: #if test prod > control
-                    items2.replace(items2.loc[index1,:][cond2],0,inplace=True) #control product score is less than test 
-                    items2.replace(items2.loc[index2,:][cond2],1,inplace=True) #test product score is higher than control
+                    items2.loc[index1,cond2[cond2].index]=0 #control product score is less than test 
+                    items2.loc[index2,cond2[cond2].index]=1 #test product score is higher than control
                 if len(cond3) > 0: #if test prod = control prod
                     equals = np.unique(item1[cond3])
                     for k in range(len(equals)):
-                        ans = item1[cond3][item1[cond3]==item1[cond3].iloc[k]]
-                        ans_Q = item1[cond3][item1[cond3]==item1[cond3].iloc[k]].index
+                        ans = item1[cond3][item1[cond3]==equals[k]]
+                        ans_Q = item1[cond3][item1[cond3]==equals[k]].index
                         if ans.iloc[0] <= 3:
-                            items2.replace(items2.loc[index1,:][ans_Q],0,inplace=True)
-                            items2.replace(items2.loc[index2,:][ans_Q],0,inplace=True)
+                            items2.loc[index1,ans_Q]=0
+                            items2.loc[index2,ans_Q]=0
                         else:
-                            items2.replace(items2.loc[index1,:][ans_Q],1,inplace=True)
-                            items2.replace(items2.loc[index2,:][ans_Q],1,inplace=True)
+                            items2.loc[index1,ans_Q]=1
+                            items2.loc[index2,ans_Q]=1
             else:
-                items2.drop(index1)
+                items2.drop(index1,inplace=True)
+                index_del.append(index1)
         
+        items = items2.copy()
+        id1 = id1[items2.index].copy()
+        product = product[items2.index].copy()
+        shave = shave[items2.index].copy()
         
+pairwise2 = True
+#restructure data to be in pairwise format
+if pairwise2:
+    items2 = items.copy()  
+    Q_list = items.columns
+    id_list = np.unique(id1)
+    n_items = len(items.columns)
+    col_names = prod_only.copy()
+    col_names.append('Control 2') #list of products
+    row_names = col_names.copy()
+    col_names.append('ID')
+    col_names.append('Item')
+    rows = row_names*len(id_list)*n_items
+    data2 = pd.DataFrame(index=rows, columns=col_names)
+    k=0
+    for m in range(n_items):        
+        for i in range(len(id_list)):
+            data_snip = data2.iloc[k:k+len(row_names),:].copy() #data for person i and item m
+            prod_i = product[id1==id_list[i]] #full product list
+            prods_only = prod_i[~prod_i.str.contains('Control')] #products only (no controls)
+            for j in range(len(prods_only)):
+                prod1 = prods_only.iloc[j] #first product for comparison with another
+                index1 = prods_only[prods_only==prod1].index[0]
+                item1 = items.loc[index1,Q_list[m]]
+                col1 = prod1          
+                #product - product comparison
+                for l in range(j+1,len(prods_only)):
+                    prod2 = prods_only.iloc[l]
+                    index2 = prods_only[prods_only==prod2].index[0]
+                    item2 = items.loc[index2,Q_list[m]]
+                    col2 = prod2
+                    #compare responses for product 1 and product 2
+                    if item1>item2:
+                        data_snip.loc[col1,col2] = 1
+                        data_snip.loc[col2,col1] = 0
+                    if item2>item1:
+                        data_snip.loc[col2,col1] = 1
+                        data_snip.loc[col1,col2] = 0
+                    if item2==item1:
+                        if item1 <= 3:
+                            data_snip.loc[col1,col2] = 0
+                            data_snip.loc[col2,col1] = 0
+                        else:
+                            data_snip.loc[col1,col2] = 1
+                            data_snip.loc[col2,col1] = 1
+                #product - control comparison
+                control = prod1 + ' Control'
+                if control in prod_i.array:
+                    index2 = prod_i[prod_i==control].index[0]
+                    item2 = items.loc[index2,Q_list[0]]
+                    col2 = 'Control 2'
+                    if item1>item2:
+                        data_snip.loc[col1,col2] = 1
+                        data_snip.loc[col2,col1] = 0
+                    if item2>item1:
+                        data_snip.loc[col2,col1] = 1
+                        data_snip.loc[col1,col2] = 0
+                    if item2==item1:
+                        if item1 <= 3:
+                            data_snip.loc[col1,col2] = 0
+                            data_snip.loc[col2,col1] = 0
+                        else:
+                            data_snip.loc[col1,col2] = 1
+                            data_snip.loc[col2,col1] = 1
+                # insert random selection for product with itself
+                data_snip.loc[col1,col1] = random.choice([0,1])
+            data_snip['ID'] = id_list[i]
+            data_snip['Item'] = m+1
+            data2.iloc[k:k+len(row_names),:] = data_snip
+        
+            k=k+len(row_names)
+                    
+    data3 = data2.copy()
+    data3['product']=data3.index #add column of product info
+    data3['index'] = list(range(len(data3)))
+    
+    data3.set_index('index',inplace=True) #set index to be unique ID
+    
+    items = data3.iloc[:,0:len(row_names)].copy() #copy question responses to data
+    id1 = data3['ID'].copy() #extract ID
+    product = data3['product'].copy() #extract products 
+    question = data3['Item'].copy()
+    items = items.dropna(how='all') #remove entries with no responses      
+    product = product[items.index]  #remove corresponding product entries  
+    question = question[items.index] 
+    id1 = id1[items.index] #extract ID
 
+#%%    
+    fill_all_nans = False
+    
+    if fill_all_nans:
+        for j in range(len(items.columns)):
+            for i in range(len(items)):
+                if items.isna().iloc[i,j]:
+                    items.iloc[i,j] = random.choice([0,1])
+        #rand_1 = 
+        
+    
     
 #%% convert product to RUMM format
 #products   
@@ -268,7 +380,7 @@ if sample:
         
 #% rack or stack the data
 stack = False
-rack = True
+rack = False
 id_edit = False #True if you want to edit the IDs corresponding to the different shaves or products
 if stack: #stack the data, by having the data for different shaves stacked on top of each other
                  #the length of the data increases, while the width stays the same
@@ -518,6 +630,8 @@ if anchor:
 #concatenate data - in this case with separate ratings and agreements
     
 RUMM_out = pd.concat([id1, id1, product_RUMM, items], axis=1, ignore_index = True)
+if pairwise2:
+    RUMM_out = pd.concat([id1, id1, product_RUMM, question, items], axis=1, ignore_index = True)
 if anchor:
     RUMM_anchor = pd.concat([id_anchor, shave_anchor, items_anchor], axis=1, ignore_index=True)
 
