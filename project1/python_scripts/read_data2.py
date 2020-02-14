@@ -17,8 +17,9 @@ from data_manipulation import remove_extremes
 from string import ascii_lowercase
 import random
 import math
+import datetime
 
-data = pd.read_excel('../Data2_Shaving/shaving_data.xlsx') #read raw data
+data = pd.read_excel('../Data2_Shaving/shaving_data_original.xlsx') #read raw data
 
 #functions
 #function to select person at random over every shave
@@ -63,9 +64,9 @@ def edit_id(id2,addition):
     id_new = id_new.astype(int)
     
     return id_new
-#%sort data
+#%%sort data
 #------------------------------------------------------------------------------
-select_aspect = True
+select_aspect = False
 if select_aspect:
     aspects = ["Chemistry"]
     data = data[data.loc[:,"Test Aspect"].isin(aspects)]
@@ -80,13 +81,14 @@ single_shave = True
 
 if single_shave:
     shave_no = [2]
-
+    data = data[shave.isin(shave_no)]
     id1 = id1[shave.isin(shave_no)]
     items = items[shave.isin(shave_no)]
     product = product[shave.isin(shave_no)]
     aspect = aspect[shave.isin(shave_no)]
     shave = shave[shave.isin(shave_no)]
-
+    
+#%
 save_pattern = False #run if the pattern of respondents for each product is required (for visualisation)
 
 if save_pattern:
@@ -112,8 +114,10 @@ if save_pattern:
 
 #% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
-prod_only = ['Prod 6','Prod 18', 'Prod 19', 'Prod 2', 'Prod 31', 'Prod 32']
-prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control','Prod 2 Control','Prod 31 Control','Prod 32 Control']
+#prod_only = ['Prod 6','Prod 18', 'Prod 19', 'Prod 2', 'Prod 31', 'Prod 32']
+#prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control','Prod 2 Control','Prod 31 Control','Prod 32 Control']
+
+prods = ['Control 1', 'Control 1 Plus', 'Control 2', 'Control 1 Minus']
 
 #prods = np.unique(product)
 remove_controls = False
@@ -133,6 +137,65 @@ if len(prods) < len(np.unique(product)):
     items = items[facet_select] 
     aspect = aspect[facet_select]
     shave = shave[facet_select]
+    data = data[facet_select]
+    
+#%%track people over multiple tests, not shaves
+test_track = True
+
+if test_track:
+    #replace months with actual date
+    data['Date'].replace('Oct 2018',datetime.datetime(2018,10,1,0,0),inplace=True)
+    data['Date'].replace('Nov 2018',datetime.datetime(2018,11,1,0,0),inplace=True)
+
+    #identify dates which are not in the correct datetime format 
+    not_dates = []    
+    for i in range(len(data['Date'])):
+        if type(data['Date'].iloc[i]) != datetime.datetime:
+            not_dates.append(data['Date'].iloc[i])
+    not_date_list = np.unique(not_dates)
+    
+    #check not_date_list and replace these dates with the correct datetime format
+    data['Date'].replace('12/12/2016',datetime.datetime(2016,12,12,0,0),inplace=True)
+    data['Date'].replace('15/6/2016',datetime.datetime(2016,6,15,0,0),inplace=True)
+    data['Date'].replace('16/6/2016',datetime.datetime(2016,6,16,0,0),inplace=True)
+    data['Date'].replace('8/6/2016',datetime.datetime(2016,6,8,0,0),inplace=True)
+    
+    #sort data by id and test date
+    data.sort_values(['assessor','Date'],inplace=True)
+
+    #get list of test numbers for each person    
+    test_number = []
+    id2 = data['assessor']
+    id_list = np.unique(id2)
+    for i in range(len(id_list)):
+        n_tests = len(id2[id2==id_list[i]]) #total number of tests for that person
+        test_list = list(range(n_tests)) #list of tests (e.g. [1,2,3])
+        test_list = [test_list[x]+1 for x in test_list]
+        test_number.extend(test_list) #add test list to array
+    
+    data['Test'] = test_number #add test numbers to original dataframe
+    
+    stack_tests = True
+    
+    if stack_tests:
+        data.sort_values(['Test'],inplace=True)
+    
+    id1 = data['assessor']
+    product = data['Product']
+    test_no = data['Test']
+    items = data.loc[:,"Q1":"Q10"] 
+    
+    remove_tests = True #remove tests (e.g. if the sample size is too small for that test)
+    
+    if remove_tests:
+        max_test = 11
+        id1 = id1[test_no <= max_test]
+        product = product[test_no <= max_test]
+        items = items[test_no <= max_test]
+        test_no = test_no[test_no <= max_test]
+        
+  
+        
 
 #%% change item responses to pairwise 
     
@@ -190,7 +253,7 @@ if pairwise1:
         product = product[items2.index].copy()
         shave = shave[items2.index].copy()
         
-pairwise2 = True
+pairwise2 = False
 #restructure data to be in pairwise format
 if pairwise2:
     items2 = items.copy()  
@@ -279,8 +342,7 @@ if pairwise2:
     product = product[items.index]  #remove corresponding product entries  
     question = question[items.index] 
     id1 = id1[items.index] #extract ID
-
-#%%    
+   
     fill_all_nans = False
     
     if fill_all_nans:
@@ -301,8 +363,8 @@ PF_RUMM, PF_key = convert2RUMM(aspect,0)
 #%
 
 #pairwise
-
-data_pw.iloc[:,0:3], product_key = convert2RUMM(data_pw.iloc[:,0:3],0)
+if pairwise2:
+    data_pw.iloc[:,0:3], product_key = convert2RUMM(data_pw.iloc[:,0:3],0)
 
 #%%
 
@@ -336,7 +398,7 @@ if extremes:
     product_RUMM = product_RUMM[items.index]
     shave = shave[items.index]
 
-rescore = False
+rescore = True
 
 if rescore:
     items.replace(1,0,inplace=True)
@@ -355,15 +417,6 @@ if rescore:
         #shave = shave[items.index]
 
             
-replace = False
-
-if replace: 
-    product_RUMM.loc[:].replace([1,3,5,7,9,11],1,inplace=True) #combine controls 
-    product_RUMM.loc[:].replace(4,3,inplace=True) #product 2
-    product_RUMM.loc[:].replace(6,4,inplace=True) #product 29
-    product_RUMM.loc[:].replace(8,5,inplace=True) #product 31 or product 6
-    product_RUMM.loc[:].replace(10,6,inplace=True) #product 6
-    
 #% delete items and data
 
 items_del = []
@@ -394,7 +447,7 @@ id_edit = False #True if you want to edit the IDs corresponding to the different
 if stack: #stack the data, by having the data for different shaves stacked on top of each other
                  #the length of the data increases, while the width stays the same
     id_original = id1.copy()
-    shave_select = [1,2] #corresponding to the stacked data
+    shave_select = [1,2,3,4,5,6,7,8,9,10] #corresponding to the stacked data
     for i in range(len(shave_select)):  
         if i == 0: #initialise stack
             id_stack = id1[shave==shave_select[i]].copy()
@@ -423,7 +476,7 @@ if stack: #stack the data, by having the data for different shaves stacked on to
     product_RUMM = product_stack.copy()
     items = item_stack.copy()
     shave = shave_stack.copy()
-    
+
 #rack the data, by having the data from different shaves adjacent to each other
 #%the length of the data stays the same, while the width increases
 if rack:
@@ -595,8 +648,7 @@ if track:
     items = item_stack.copy()
     shave = shave_stack.copy()
 
-#%%
-
+#%
 approach4 = False
 
 if approach4:
@@ -615,12 +667,10 @@ if approach4:
     shave = shave[index_keep]
     items = items.loc[index_keep,:]
 
-
 #id1, id_original = edit_id(id1,product_RUMM)
-
-#%%
+#%
 #remove extreme people from unique index list
-anchor = False
+anchor = True
 if anchor:
     if extremes:
         extreme_index = extreme_persons.index
@@ -628,17 +678,19 @@ if anchor:
         id_ignore = id_index.isin(extreme_index)
         id_ignore = id_index[id_ignore]
 
-    unique_index = select_every_person(shave_select,id_original)
+    unique_index = select_every_person(np.unique(test_no),id1)
 
     id_anchor = id1[unique_index] 
     product_anchor = product_RUMM[unique_index]
     items_anchor = items.loc[unique_index,:]
-    shave_anchor = shave[unique_index]          
+    shave_anchor = shave[unique_index] 
+    if test_track: #anchor with test numbers (not shave numbers), if tracking the people over tests
+        shave_anchor = test_no[unique_index]         
     
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, product_RUMM, items], axis=1, ignore_index = True)
+RUMM_out = pd.concat([id1, test_no, items], axis=1, ignore_index = True)
 if pairwise2:
     RUMM_out = pd.concat([id1, id1, product_RUMM, question, items], axis=1, ignore_index = True)
 if anchor:
@@ -656,6 +708,8 @@ with pd.ExcelWriter("first_shave.xlsx") as writer:
     RUMM_out.to_excel(writer, sheet_name = 'data', index=None, header=False)
     if anchor:
         RUMM_anchor.to_excel(writer, sheet_name = 'anchor data', index=None, header=False)
+    if pairwise2:
+        data_pw.to_excel(writer, sheet_name = 'pairwise data', index=None)
     product_key.to_excel(writer, sheet_name = 'key')
     save_index.to_excel(writer, sheet_name = 'index')
 
