@@ -6,7 +6,7 @@ raw data structure:
 
 import os
 
-os.chdir("M:\\LIDA_internship\\project1\\python_scripts")
+os.chdir("C:\\Users\\matcc\\LIDA_internship\\project1\\python_scripts")
 
 import pandas as pd
 import numpy as np
@@ -64,7 +64,7 @@ def edit_id(id2,addition):
     id_new = id_new.astype(int)
     
     return id_new
-#%%sort data
+#%sort data
 #------------------------------------------------------------------------------
 select_aspect = False
 if select_aspect:
@@ -114,10 +114,11 @@ if save_pattern:
 
 #% consider certain products only
 #prods = ['Prod 1','Prod 2','Prod 3','Prod 4']
-#prod_only = ['Prod 6','Prod 18', 'Prod 19', 'Prod 2', 'Prod 31', 'Prod 32']
-#prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control','Prod 2 Control','Prod 31 Control','Prod 32 Control']
-
-prods = ['Control 1', 'Control 1 Plus', 'Control 2', 'Control 1 Minus']
+prod_only = ['Prod 6','Prod 18', 'Prod 19', 'Prod 2', 'Prod 31', 'Prod 32', 'Prod 29']
+prods = prod_only + ['Prod 6 Control','Prod 18 Control', 'Prod 19 Control','Prod 2 Control','Prod 31 Control','Prod 32 Control','Prod 29 Control']
+#%
+prods = ['Control 1','Control 2']
+#prods = ['Control 2']
 
 #prods = np.unique(product)
 remove_controls = False
@@ -160,26 +161,31 @@ if test_track:
     data['Date'].replace('16/6/2016',datetime.datetime(2016,6,16,0,0),inplace=True)
     data['Date'].replace('8/6/2016',datetime.datetime(2016,6,8,0,0),inplace=True)
     
-    #sort data by id and test date
-    data.sort_values(['assessor','Date'],inplace=True)
+    #sort data by id and test date, for each product
+    for i in range(len(prods)):
+        data_i = data[product==prods[i]].copy()
+        data_i.sort_values(['assessor','Date'],inplace=True)
 
-    #get list of test numbers for each person    
-    test_number = []
-    id2 = data['assessor']
-    id_list = np.unique(id2)
-    for i in range(len(id_list)):
-        n_tests = len(id2[id2==id_list[i]]) #total number of tests for that person
-        test_list = list(range(n_tests)) #list of tests (e.g. [1,2,3])
-        test_list = [test_list[x]+1 for x in test_list]
-        test_number.extend(test_list) #add test list to array
+        #get list of test numbers for each person    
+        test_number = []
+        id2 = data_i['assessor']
+        id_list = np.unique(id2)
+        for j in range(len(id_list)):
+            n_tests = len(id2[id2==id_list[j]]) #total number of tests for that person
+            test_list = list(range(n_tests)) #list of tests (e.g. [1,2,3])
+            test_list = [test_list[x]+1 for x in test_list]
+            test_number.extend(test_list) #add test list to array
     
-    data['Test'] = test_number #add test numbers to original dataframe
+        data_i['Test'] = test_number #add test numbers to original dataframe
     
-    stack_tests = True
+                    
+        data.loc[data_i.index,:] = data_i
+    data.sort_values(['assessor','Test'],inplace=True)
+    stack_tests = False
     
     if stack_tests:
         data.sort_values(['Test'],inplace=True)
-    
+
     id1 = data['assessor']
     product = data['Product']
     test_no = data['Test']
@@ -188,15 +194,12 @@ if test_track:
     remove_tests = True #remove tests (e.g. if the sample size is too small for that test)
     
     if remove_tests:
-        max_test = 11
+        max_test = 3
         id1 = id1[test_no <= max_test]
         product = product[test_no <= max_test]
         items = items[test_no <= max_test]
         test_no = test_no[test_no <= max_test]
         
-  
-        
-
 #%% change item responses to pairwise 
     
 pairwise1 = False
@@ -366,7 +369,7 @@ PF_RUMM, PF_key = convert2RUMM(aspect,0)
 if pairwise2:
     data_pw.iloc[:,0:3], product_key = convert2RUMM(data_pw.iloc[:,0:3],0)
 
-#%%
+#%
 
 misfit_ID = []
 
@@ -440,14 +443,16 @@ if sample:
 
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
         
-#% rack or stack the data
+#%% rack or stack the data
 stack = False
-rack = False
+rack = True
 id_edit = False #True if you want to edit the IDs corresponding to the different shaves or products
 if stack: #stack the data, by having the data for different shaves stacked on top of each other
                  #the length of the data increases, while the width stays the same
     id_original = id1.copy()
-    shave_select = [1,2,3,4,5,6,7,8,9,10] #corresponding to the stacked data
+    if test_track: #rack tests instead of shaves if tracking tests
+        shave = test_no.copy()
+    shave_select = [3,6] #corresponding to the stacked data
     for i in range(len(shave_select)):  
         if i == 0: #initialise stack
             id_stack = id1[shave==shave_select[i]].copy()
@@ -481,7 +486,9 @@ if stack: #stack the data, by having the data for different shaves stacked on to
 #%the length of the data stays the same, while the width increases
 if rack:
     id_original = id1.copy()
-    shave_select = [2,10]    
+    if test_track: #rack tests instead of shaves if tracking tests
+        shave = test_no.copy()
+    shave_select = [1,3]    
     id_list = np.unique(id_original)
     index_both = []
     index0 = []
@@ -540,7 +547,8 @@ if rack:
     product_RUMM = product_rack.copy()
     shave = shave_rack.copy()
     items = item_rack.copy()
-
+    if test_track:
+        test_no = shave.copy()
 
 #convert product key to alphabetical
     
@@ -690,7 +698,7 @@ if anchor:
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, test_no, items], axis=1, ignore_index = True)
+RUMM_out = pd.concat([id1, id1, product_RUMM, items], axis=1, ignore_index = True)
 if pairwise2:
     RUMM_out = pd.concat([id1, id1, product_RUMM, question, items], axis=1, ignore_index = True)
 if anchor:
