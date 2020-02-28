@@ -39,7 +39,7 @@ def convert2RUMM (data_old,id1):
             response_dict[response_list[i]] = i #create dictionary to redefine responses as integers
             #create key for reference: contains response and quantity of each
             if id1 == 0: #when no text has been removed  
-                response_key[i] = response_list[i]  + ' ' + '(' + str(counts[i]) + ')' 
+                response_key[i] = str(response_list[i])  + ' ' + '(' + str(counts[i]) + ')' 
             else: #if text was removed, use the original responses in the output key
                 response_key[i] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
             quantity[i] = str(counts[i])
