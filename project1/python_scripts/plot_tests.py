@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
-os.chdir("M:\LIDA_internship\project1\python_scripts")
+os.chdir("C:\\Users\\matcc\\LIDA_internship\\project1\\python_scripts")
 
 #convert figsize from cm to inches
 def cm2inch(*tupl):
@@ -66,10 +66,30 @@ if separate_controls:
         
         controls[i] = shaves[i][control_index[i]]
         shaves[i].drop(shaves[i][control_index[i]].index,inplace=True)
+        
+#%% three facet analysis
+    
+data =   pd.read_excel('../Data2_Shaving/track_tests/3facet_results.xls',header=None)  
+products = data.iloc[:,7]
+items = data.iloc[:,2]
+shaves = data.iloc[:,12]
+index_dict = dict(zip(products.index,data.iloc[:,6]))
+products.rename(index_dict,inplace=True)
+index_dict2 = dict(zip(items.index,data.iloc[:,0]))
+items.rename(index_dict2,inplace=True)
+index_dict3 = dict(zip(shaves.index,data.iloc[:,11]))
+shaves.rename(index_dict3,inplace=True)
+
+shaves = shaves.dropna()
+products = products.dropna()
+items = items.dropna()
+
+    
     
 #%% plot histograms of product and item locations for the different test numbers
         
-shave_item_plot = True
+shave_item_plot = False
+test_item_product_plot = True
 save = True
 
 
@@ -131,6 +151,66 @@ if shave_item_plot:
                 'size'   : 12}
 
     figname = 'shave2_tests2'
+    matplotlib.rc('font', **font)
+    
+    if save:    
+
+        plt.savefig('Figures2/'+figname+'.pdf')
+        plt.savefig('Figures2/'+figname+'.jpg')
+        
+if test_item_product_plot:
+    
+    fig,ax = plt.subplots(1,3,figsize=cm2inch(15,6))
+    
+    width = 0.85
+    
+    xmax = max(items.max(),shaves.max(),products.max()) + 0.1
+    xmin = min(items.min(),shaves.min(),products.min()) - 0.1
+    
+    #plot products
+
+    ax[0].bar(0,products.loc['control1'],width,label='Control 1')
+    ax[0].bar(1,products.loc['control2'],width,label='Control 2')
+
+    labels = ['1','2']
+    ax[0].set_title('Controls')
+    ax[0].set_xticks([0,1])
+    ax[0].set_xticklabels(labels)
+    ax[0].tick_params(axis="y",labelsize=12)
+    ax[0].set_ylim([xmin,xmax])
+    #plot items
+    labels = ('Item 1', 'Item 2' ,'Item 3', 'Item 4', 'Item 5', 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10')
+    
+    x = np.arange(len(labels))+1
+
+    for j in range(len(x)):
+        ax[1].bar(x[j],items[j+1],width,label=labels[j])
+    ax[1].set_xticks(list(range(1,11)))
+    ax[1].set_yticks([])
+    ax[1].tick_params(axis="x",labelsize=10)
+    ax[1].set_title('Items')
+    ax[1].set_ylim([xmin,xmax])
+    
+    #plot shaves
+    
+    labels2 = ('Test 1', 'Test 2' ,'Test 3')
+    
+    x2 = np.arange(len(labels2))+1
+
+    for j in range(len(shaves)):
+        ax[2].bar(j+1,shaves.iloc[j],width,label='Shave '+str(j+1))
+    ax[2].set_xticks(list(range(1,len(shaves)+1)))
+    ax[2].set_yticks([])
+    ax[2].tick_params(axis="x",labelsize=12)
+    ax[2].set_title('Tests')
+    ax[2].set_ylim([xmin,xmax])
+    
+    ax[0].set_ylabel('Location (logits)')
+    
+    plt.tight_layout()
+    #fig.subplots_adjust(left=0.2)
+       
+    figname = '3tests_3facets'
     matplotlib.rc('font', **font)
     
     if save:    
