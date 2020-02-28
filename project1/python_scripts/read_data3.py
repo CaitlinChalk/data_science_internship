@@ -120,12 +120,19 @@ if extremes:
     id1 = id1[items.index]
     product_RUMM = product_RUMM[items.index]
 
-rescore = False
+rescore = True
 
 if rescore:
     items_RUMM.replace(1,0,inplace=True)
-    items_RUMM.replace(2,1,inplace=True)
-    items_RUMM.replace(3,1,inplace=True)
+    items_RUMM.replace(2,0,inplace=True)
+    items_RUMM.replace(3,0,inplace=True)
+    items_RUMM.replace(4,0,inplace=True)
+    items_RUMM.replace(5,1,inplace=True)
+    items_RUMM.replace(6,1,inplace=True)
+    items_RUMM.replace(7,1,inplace=True)
+    items_RUMM.replace(8,1,inplace=True)
+    items_RUMM.replace(9,1,inplace=True)
+
     
     if extremes:
         items_1, id1_1, product_RUMM_1, extreme_persons = remove_extremes(items,id1,product_RUMM) 
@@ -157,7 +164,7 @@ for i in range(len(items_del)):
 #%% output final data set
 #concatenate data - in this case with separate ratings and agreements
     
-RUMM_out = pd.concat([id1, id1, product_RUMM, PF_RUMM, items_RUMM], axis=1, ignore_index = True)
+RUMM_out = pd.concat([id1, id1, product_RUMM, items_RUMM], axis=1, ignore_index = True)
 
 with pd.ExcelWriter("fragrance.xlsx") as writer:
     RUMM_out.to_excel(writer, sheet_name = 'data', index=None, header=False)
