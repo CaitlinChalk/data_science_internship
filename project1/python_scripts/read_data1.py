@@ -57,6 +57,7 @@ person_factors = usual_ratings.copy()
 person_factors = data['Whether Bought Currently Used Laundry Detergent Before']
 #person ID
 id1 = data.loc[:,"Respondent Serial"]
+id_original = id1.copy()
 #%
 del data
 
@@ -185,6 +186,7 @@ if extract:
     id1 = id1.iloc[id_extract]
     PFs_RUMM = PFs_RUMM.iloc[id_extract]
     facets_RUMM = facets_RUMM.iloc[id_extract]
+    id_rating = id1.copy()
     
 #% rescore data
 
@@ -402,9 +404,28 @@ with pd.ExcelWriter(name) as writer:
 #    RUMM_agreements.to_excel(writer, sheet_name = 'data', index=None, header=False)
 #    RUMM_agreements_key.to_excel(writer, sheet_name = 'key')
 
+#%% output removed person ids to excel file
 
+write_misfits = True
 
+if write_misfits:
+    
+    rating_removed_id = id_original[~id_original.isin(id_rating)]
+    agreement_removed_id = id_original[~id_original.isin(id_agree)]
+    both_removed_id = rating_removed_id[rating_removed_id.isin(agreement_removed_id)]
+    
+    files_out = [rating_removed_id,agreement_removed_id,both_removed_id]
 
+    for i in range(len(files_out)):
+        new_index = list(range(len(files_out[i])))
+        index_dict = dict(zip(files_out[i].index,new_index))
+        files_out[i].rename(index_dict,inplace=True)
+
+    id_out = pd.concat([rating_removed_id,agreement_removed_id,both_removed_id],axis=1,ignore_index=True)
+
+    with pd.ExcelWriter('misfitting_people.xlsx') as writer:
+        id_out.to_excel(writer, index=None, header=False)
+    
 
 
 
