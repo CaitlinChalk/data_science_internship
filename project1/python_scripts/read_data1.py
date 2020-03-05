@@ -4,11 +4,14 @@ raw data structure:
     usual brand, laundry habits, misc opinions (inc overall rating), ratings, agreements, attitudes, Person Factors
 """
 
+import os
 import pandas as pd
 import numpy as np
 from RUMM_conversion import convert2RUMM #function to convert structured data to RUMM format
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
+
+os.chdir("C:\\Users\\matcc\\LIDA_internship\\project1\\python_scripts")
 
 data = pd.read_excel('../Rasch_analysis/Data1_Saudi/raw/Saudi_data.xlsx') #read raw data
 
@@ -50,7 +53,8 @@ c5 = "Size Of Household"
 c6 = "Number Of Children In Household Under 16"
 c7 = "Monthly Household Income"
 person_factors = data.loc[:,[c4,c6]]
-
+person_factors = usual_ratings.copy()
+person_factors = data['Whether Bought Currently Used Laundry Detergent Before']
 #person ID
 id1 = data.loc[:,"Respondent Serial"]
 #%
@@ -112,7 +116,7 @@ PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
 
 #data of interest: ratings or agreements?
-data_type = "agreements"
+data_type = "ratings"
 if data_type == "ratings":
     data_interest = ratings
 elif data_type == "agreements":
@@ -217,7 +221,7 @@ if delete_items:
     #agreements_RUMM.drop(columns=col, inplace=True)
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
 
-#%% product manipulations
+#% product manipulations
     
 #% remove facets
 facets_of_interest = np.array([1,2,3,4,5,6,7,8,9,10]) #list of facets of interest
@@ -370,7 +374,7 @@ if PFs_RUMM.ndim > 1:
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_data = pd.concat([id1, facets_RUMM, data_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
     #RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
     RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
