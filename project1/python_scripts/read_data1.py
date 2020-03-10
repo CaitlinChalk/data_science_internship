@@ -11,7 +11,7 @@ from RUMM_conversion import convert2RUMM #function to convert structured data to
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
 
-os.chdir("C:\\Users\\matcc\\LIDA_internship\\project1\\python_scripts")
+os.chdir('M:/LIDA_internship/project1/python_scripts')
 
 data = pd.read_excel('../Rasch_analysis/Data1_Saudi/raw/Saudi_data.xlsx') #read raw data
 
@@ -52,9 +52,16 @@ c4 = "Employment Of Respondent"
 c5 = "Size Of Household"
 c6 = "Number Of Children In Household Under 16"
 c7 = "Monthly Household Income"
-person_factors = data.loc[:,[c4,c6]]
-person_factors = usual_ratings.copy()
-person_factors = data['Whether Bought Currently Used Laundry Detergent Before']
+c8 = "How Usually Wash Laundry"
+c9 = "Type Of Main Washing Machine"
+c10 = "Number Of Times Per Week Wash In Washing Machine"
+c11 = "Type Of Laundry Detergent Usually Use"
+c12 = "How Much Scent Like On Laundry"
+c13 = "Whether Usually Use Fabric Softener - Personal"
+c14 = "Whether Usually Use Liquid Bleach - Personal"
+person_factors = data.loc[:,[c8,c9,c10,c11,c12,c13,c14]]
+#person_factors = usual_ratings.copy()
+#person_factors = data['Whether Bought Currently Used Laundry Detergent Before']
 #person ID
 id1 = data.loc[:,"Respondent Serial"]
 id_original = id1.copy()
@@ -406,7 +413,7 @@ with pd.ExcelWriter(name) as writer:
 
 #%% output removed person ids to excel file
 
-write_misfits = True
+write_misfits = False
 
 if write_misfits:
     
