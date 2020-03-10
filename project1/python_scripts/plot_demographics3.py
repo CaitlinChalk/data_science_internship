@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 os.chdir('M:/LIDA_internship/project1/python_scripts')
 
-data1 = pd.read_excel('../Rasch_analysis/Data1_Saudi/extra_PFs/ratings_results.xlsx') #read raw data
-data2 = pd.read_excel('../Rasch_analysis/Data1_Saudi/extra_PFs/agreements_results.xlsx') #read raw data
+data1 = pd.read_excel('../Rasch_analysis/Data1_Saudi/extra_PFs/ratings_results_purchase_history.xlsx') #read raw data
+data2 = pd.read_excel('../Rasch_analysis/Data1_Saudi/extra_PFs/agreements_results_purchase_history.xlsx') #read raw data
 
 #convert figsize from cm to inches
 def cm2inch(*tupl):
@@ -35,7 +35,7 @@ agreement_data = []
 #    agreement_data.append(location2[data2.iloc[:,-1]==i])
 
 save_fig = True
-factor = 'Overall rating'
+factor = 'Purchase history'
 if factor == 'Overall rating':
     factor_keyR = 'PF_overall'
     factor_keyA = 'PF_overall'
@@ -72,6 +72,12 @@ if factor == 'Value for Money':
     labels = ['Very good','Fairly good','Average','Somewhat poor','Very poor']
     labels_i = [3,1,0,2,4]
     save_name = 'value'
+if factor == 'Purchase history':
+    factor_keyR = 'Unnamed: 6'
+    factor_keyA = 'Unnamed: 6'
+    labels = ['Many times before','A few times before','Once before','Never before']
+    labels_i = [2,1,3,0]
+    save_name = 'history'
 
 labels_r = labels.copy()
 labels_a = labels.copy()
@@ -108,14 +114,14 @@ if save_fig:
     
 #%% DIF
 
+#agreements
 save_fig = True
 rating = False
 performance = False
 distinctiveness = False
 value = False
-history = True
+history = False
  
-#agreements
     
 #overall rating
 if rating:
@@ -156,7 +162,7 @@ if performance:
 
     ax.plot(loc1,score1,'-o',linewidth=3)
     ax.plot(loc2,score2,'-s',linewidth=3)
-    ax.plot(loc3,score3,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 8',FontSize=12)
     ax.set_title('This product gives the right level of suds throughout the wash (p = 0.0037)',FontSize=12)
@@ -183,7 +189,7 @@ if distinctiveness:
 
     ax.plot(loc1,score1,'-o',linewidth=3)
     ax.plot(loc2,score2,'-s',linewidth=3)
-    ax.plot(loc3,score3,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 3',FontSize=12)
     ax.set_title('This product is excellent at removing tough stains (p = 0.007)',FontSize=12)
@@ -210,7 +216,7 @@ if value:
 
     ax.plot(loc1,score1,'-o',linewidth=3)
     ax.plot(loc2,score2,'-s',linewidth=3)
-    ax.plot(loc3,score3,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 1',FontSize=12)
     ax.set_title('This product provides excellent value (p = 0.001)',FontSize=12)
@@ -231,16 +237,17 @@ if history:
     score4 = [1.25,	1.56,	2,  	2,  	2.4,	2.71,	3,  	2.33,	3.67]
     
 
-    loc1 = [0.27,	0.62,	0.88,	1.19,	1.64,	2.16,	2.75,	3.8]
-    loc2 = [0.27,	0.64,	0.88,	1.18,	1.64,	2.19,	2.73,	3.73]
-    loc3 = [0.3,	0.65,	0.88,	1.15,	1.59,	2.08,	2.66,	3.7]
-    loc4 = [0.25,	0.53,	0.88,	1.25,	1.66,	2.3,	2.69,	3.4]
+    loc1 = [-0.62, 0.27,	0.62,	0.88,	1.19,	1.64,	2.16,	2.75,	3.8]
+    loc2 = [-0.38, 0.27,	0.64,	0.88,	1.18,	1.64,	2.19,	2.73,	3.73]
+    loc3 = [-0.86, 0.3, 	0.65,	0.88,	1.15,	1.59,	2.08,	2.66,	3.7]
+    loc4 = [-0.38, 0.25,	0.53,	0.88,	1.25,	1.66,	2.3,	2.69,	3.4]
 
     fig,ax = plt.subplots()
 
     ax.plot(loc1,score1,'-o',linewidth=3)
     ax.plot(loc2,score2,'-s',linewidth=3)
-    ax.plot(loc3,score3,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
+    ax.plot(loc4,score4,'-v',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 3',FontSize=12)
     ax.set_title('This product is excellent at removing tough stains (p = 0.0003)',FontSize=12)
@@ -251,3 +258,94 @@ if history:
     if save_fig:
         plt.savefig('Figures3/'+figname+'.pdf')
         plt.savefig('Figures3/'+figname+'.jpg')
+#ratings
+rating_ra = False
+distinctiveness_ra = False
+history_ra = True
+
+#overall rating
+if rating_ra:
+    
+    score1 = [1.76,	2.24,	2.56,	2.79,	2.79,	3.18,	3.49,	3.53,	3.71,	3.87]
+    score2 = [1.46,	2.02,	2.21,	2.73,	2.93,	3.23,	3.17,	3.44,	3.63]
+
+    loc1 = [-0.63, 0.24,	0.57,	0.9,	1.3,	1.64,	2.05,	2.5,	3.11,	4.06]
+    loc2 = [-0.55, 0.21,	0.56,	0.89,	1.27,	1.63,	2.02,	2.52,	3.12]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 10',FontSize=12)
+    ax.set_title('Rating for keeping colours vivid and bright (p = 0.0098)',FontSize=12)
+    ax.legend(['Overall score: Excellent','Overall score: Very good'],prop={"size":12})
+
+    figname = 'rating_DIF_item10_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+
+if distinctiveness_ra:
+    
+    score1 = [1.6,	1.4,	2,	2.39,	3,	3.05,	3.16,	3.31,	3.65,	3.86]
+    score2 = [1.58,	2.03,	2.29,	2.22,	2.64,	2.77,	2.74,	3.5,	3.41,	3.77]
+    score3 = [0.95,	1.84,	1.9,	2.36,	2.71,	2.63,	3.44,	3,	4,	4]
+    
+
+    loc1 = [-0.76,	0.05,	0.47,	0.79,	1.16,	1.52,	1.93,	2.39,	2.9,	3.9]
+    loc2 = [-0.6,	0.04,	0.45,	0.75,	1.13,	1.54,	1.91,	2.37,	2.91,	3.66]
+    loc3 = [-1.16,	0.05,	0.43,	0.79,	1.18,	1.57,	1.94,	2.21,	3.11,	4.05]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 4',FontSize=12)
+    ax.set_title('Rating for keeping clothes looking their best over time (p = 0.0086)',FontSize=12)
+    ax.legend(['Distinctiveness: Very new','Distinctiveness: Fairly new','Distinctiveness: About the same'],prop={"size":10},loc='lower right')
+
+    figname = 'distinctiveness_DIF_item4_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+if history_ra:
+    
+    score1 = [1.08,	1.83,	1.96,	2.03,	2.54,	2.72,	2.95,	3.32,	3.43,	3.88]
+    score2 = [1.25,	1.9,	2.13,	2.5,	2.83,	3,	3.09,	3.43,	3.71,	3.79]
+    score3 = [1,	2.33,	2.33,	2.88,	3,	2.8,	2.89,	3.6,	3,	3.88]
+    score4 = [1.5,	1.5,	2.67,	2.5,	2.67,	2.67,	3.33,	3,	4,	4]
+    
+
+    loc1 = [-1.1,	-0.01,	0.46,	0.77,	1.13,	1.49,	1.93,	2.41,	2.9,	3.87]
+    loc2 = [-0.93,	0.01,	0.42,	0.75,	1.14,	1.54,	1.91,	2.34,	2.9	,3.78]
+    loc3 = [-1.09,	0.07,	0.45,	0.74,	1.12,	1.58,	1.86,	2.28,	2.73,	3.93]
+    loc4 = [-0.75,	0.02,	0.41,	0.77,	1.18,	1.55,	1.91,	2.43,	2.99,	4.31]
+    
+    loc1 = [-1.1,	0.01,	0.49,	0.8,	1.16,	1.53,	1.97,	2.46,	2.96,	3.93]
+    loc2 = [-0.93,	0.04,	0.45,	0.78,	1.18,	1.58,	1.95,	2.39,	2.95,	3.84]
+
+    #option 2 - only 'many times' and 'few times' consumers were included in the analysis
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    #ax.plot(loc3,score3,'-*',linewidth=3) #comment if only considering the 'many times' and 'few times' analysis
+    #ax.plot(loc4,score4,'-v',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 4',FontSize=12)
+    ax.set_title('Rating for keeping clothes looking their best over time (p = 0.001)',FontSize=12) #p = 0.0067 when all categories are included
+    ax.legend(['Purchased: Many times','Purchased: Few times','Purchased: Once','Purchased: Never'],prop={"size":10},loc='upper left')
+
+    figname = 'history_DIF_item4_ra2'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+
