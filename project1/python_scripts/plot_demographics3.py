@@ -121,6 +121,10 @@ performance = False
 distinctiveness = False
 value = False
 history = False
+wash = False
+detergent = False
+scents = False
+bleach = False
  
     
 #overall rating
@@ -258,10 +262,115 @@ if history:
     if save_fig:
         plt.savefig('Figures3/'+figname+'.pdf')
         plt.savefig('Figures3/'+figname+'.jpg')
+        
+#type of wash
+if wash:
+    
+    score1 = [1.45,	2.25,	2.45,	2.38,	2.78,	2.92,	3,	3.28,	3.7]
+    score2 = [1.6,	1.63,	2.23,	2.44,	2.79,	2.93,	3.33,	3.64,	3.83]
+
+    loc1 = [-0.57,	0.28,	0.62,	0.88,	1.19,	1.65,	2.18,	2.73,	3.73]
+    loc2 = [-0.44,	0.26,	0.63,	0.88,	1.18,	1.63,	2.16,	2.73,	3.74]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 3',FontSize=12)
+    ax.set_title('This product is excellent at removing tough stains (p = 0.0012)',FontSize=12)
+    ax.legend(['Usual wash: Hand and machine wash','Usual wash: Machine wash only'],prop={"size":10},loc='lower right')
+
+    figname = 'wash_DIF_item3'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+if detergent:
+    
+    score1 = [1.38,	2.65,	2.68,	3,	3,	3.26,	3.68,	3.75,	3.71]
+    score2 = [2,	2.76,	2.93,	2.95,	3.05,	3.45,	3.54,	3.64,	3.94]
+
+    loc1 = [-0.45,	0.27,	0.6,	0.88,	1.2,	1.66,	2.19,	2.69,	3.79]
+    loc2 = [-0.53,	0.28,	0.64,	0.88,	1.18,	1.63,	2.16,	2.74,	3.71]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 9',FontSize=12)
+    ax.set_title('This product is excellent at completely removing bad odours (p = 0.0028)',FontSize=12)
+    ax.legend(['Type of detergent: Mainly powder','Type of detergent: Powder and liquid'],prop={"size":10},loc='lower right')
+
+    figname = 'det_DIF_item9'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+        
+if scents:
+    
+    score1 = [1.49,	2,	2.18,	2.4,	2.8,	2.88,	3.02,	3.38,	3.71]
+    score2 = [1.45,	2.03,	2.43,	2.39,	2.73,	2.92,	3.34,	3.43,	3.84]
+    score3 = [2.5,	2.33,	2.75,	3,	3,	3.67,	3.4,	3.67,	3.8]
+    
+
+    loc1 = [-0.43,	0.28,	0.62,	0.88,	1.2,	1.63,	2.18,	2.7,	3.73]
+    loc2 = [-0.63,	0.27,	0.63,	0.88,	1.18,	1.65,	2.15,	2.76,	3.72]
+    loc3 = [-0.32,	0.29,	0.7,	0.88,	1.2,	1.61,	2.24,	2.79,	3.97]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 3',FontSize=12)
+    ax.set_title('This product is excellent at removing tough stains (p = 0.004)',FontSize=12)
+    ax.legend(['Preferred scent: A large amount','Preferred scent: A little amount','Preferred scent: None'],prop={"size":10},loc='lower right')
+
+    figname = 'scent_DIF_item3'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+#bleach
+if bleach:
+    
+    score2 = [1.44,	1.97,	2.14,	2.62,	2.75,	2.81,	3.12,	3.22,	3.7]
+    score1 = [1.57,	2.05,	2.44,	2.27,	2.82,	3,	3.18,	3.49,	3.79]
+
+    loc2 = [-0.36,	0.29,	0.63,	0.88,	1.18,	1.68,	2.15,	2.72,	3.66]
+    loc1 = [-0.57,	0.27,	0.63,	0.88,	1.19,	1.61,	2.18,	2.73,	3.77]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 3',FontSize=12)
+    ax.set_title('This product is excellent at removing tough stains (p = 0.036)',FontSize=12)
+    ax.legend(['Use liquid bleach: yes','Use liquid bleach: no'],prop={"size":12})
+
+    figname = 'bleach_DIF_item3'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
 #ratings
 rating_ra = False
 distinctiveness_ra = False
-history_ra = True
+history_ra = False
+intent_ra = False
+wash_ra = False
+machine_ra = False
+scents_ra = False
+bleach_ra = True
 
 #overall rating
 if rating_ra:
@@ -349,3 +458,129 @@ if history_ra:
         plt.savefig('Figures3/'+figname+'.pdf')
         plt.savefig('Figures3/'+figname+'.jpg')
 
+#overall rating
+if intent_ra:
+    
+    score1 = [2.15,	2.56,	2.79,	2.97,	3.17,	3.15,	3.53,	3.57,	3.74,	3.9]
+    score2 = [1.71,	2.42,	2.57,	2.48,	3.12,	3.24,	3.44,	3.69,	3.67,	4]
+
+    loc1 = [-0.61,	0.11,	0.47,	0.75,	1.11,	1.49,	1.9,	2.34,	2.87,	3.85]
+    loc2 = [-0.89,	0.08,	0.46,	0.73,	1.14,	1.53,	1.85,	2.36,	2.91,	3.67]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 1',FontSize=12)
+    ax.set_title('Rating for cleaning laundry overall (p = 0.006)',FontSize=12)
+    ax.legend(['Purchase intent: Definitely buy again','Purchase intent: Probably buy again'],prop={"size":10},loc = 'lower right')
+
+    figname = 'intent_DIF_item1_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+
+#type of wash
+if wash_ra:
+    
+    score1 = [1.38,	1.98,	2.13,	2.58,	2.67,	2.75,	3.09,	3.31,	3.48,	3.87]
+    score2 = [1.22,	2.07,	2.35,	2.73,	2.67,	3,	3.06,	3.53,	3.79,	3.82]
+
+    loc1 = [-1.01,	0.04,	0.44,	0.76,	1.15,	1.51,	1.93,	2.38,	2.89,	3.9]
+    loc2 = [-0.98,	-0.03,	0.43,	0.76,	1.12,	1.53,	1.89,	2.35,	2.9,	3.8]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 15',FontSize=12)
+    ax.set_title('Rating for being gentle and safe on clothes and sensitive skin (p = 0.027)',FontSize=12)
+    ax.legend(['Usual wash: Hand and machine wash','Usual wash: Machine wash only'],prop={"size":10},loc='lower right')
+
+    figname = 'wash_DIF_item15_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+if machine_ra:
+    
+    score1 = [1,	1.89,	2.29,	2.35,	2.42,	2.96,	3.2,	3.5,	3.78,	3.84]
+    score2 = [1.21,	2,	2.26,	2.3,	2.52,	3,	2.97,	3.46,	3.64,	3.89]
+    score3 = [0.94,	1.54,	2.33,	2.08,	2.35,	2.94,	3.13,	3.24,	3.15,	3.65]
+    
+
+    loc1 = [-1.07,	-0.01,	0.44,	0.74,	1.14,	1.53,	1.89,	2.4,	2.93,	3.87]
+    loc2 = [-0.94,	0.01,	0.43,	0.77,	1.14,	1.51,	1.91,	2.34,	2.87,	3.82]
+    loc3 = [-1.12,	0.03,	0.44,	0.78,	1.15,	1.54,	1.94,	2.36,	2.94,	3.92]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.plot(loc3,score3,'-*',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 8',FontSize=12)
+    ax.set_title('Rating for providing long lasting freshness (p = 0.0086)',FontSize=12)
+    ax.legend(['Machine type: Fully automatic, front loader','Machine type: Fully automatic, top loader','Machine type: Semi-automatic, top loader'],prop={"size":9.5},loc='lower right')
+
+    figname = 'machine_DIF_item8_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+if scents_ra:
+    
+    score1 = [1.26,	1.88,	2.29,	2.89,	2.92,	3.08,	3.55,	3.59,	3.65,	3.79]
+    score2 = [1.27,	1.81,	2.19,	2.65,	2.68,	2.93,	3.23,	3.34,	3.57,	3.88]
+    
+
+    loc1 = [-0.89,	0.01,	0.47,	0.78,	1.18,	1.55,	1.94,	2.43,	2.93,	3.78]
+    loc2 = [-1.13,	0.04,	0.47,	0.79,	1.17,	1.55,	1.94,	2.37,	2.93,	3.96]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 10',FontSize=12)
+    ax.set_title('Rating for keeping colours vivid and bright (p = 0.0097)',FontSize=12)
+    ax.legend(['Preferred scent: A large amount','Preferred scent: A little amount'],prop={"size":10},loc='lower right')
+
+    figname = 'scent_DIF_item10_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg') 
+        
+if bleach_ra:
+    
+    score1 = [1.29,	1.9,	2.2,	2.71,	2.51,	2.83,	3,	3.42,	3.57,	3.84]
+    score2 = [1.32,	2.25,	2.31,	2.61,	2.93,	2.93,	3.21,	3.43,	3.82,	3.86]
+
+    loc1 = [-1.08,	0.02,	0.44,	0.77,	1.14,	1.52,	1.91,	2.38,	2.89,	3.85]
+    loc2 = [-0.89,	0,	0.44,	0.75,	1.13,	1.53,	1.91,	2.33,	2.91,	3.84]
+
+    fig,ax = plt.subplots()
+
+    ax.plot(loc1,score1,'-o',linewidth=3)
+    ax.plot(loc2,score2,'-s',linewidth=3)
+    ax.set_xlabel('Person location (logits)',FontSize=12)
+    ax.set_ylabel('Expected score for Item 15',FontSize=12)
+    ax.set_title('Rating for being gentle and safe on clothes and sensitive skin  (p = 0.021)',FontSize=12)
+    ax.legend(['Use liquid bleach: yes','Use liquid bleach: no'],prop={"size":12})
+
+    figname = 'bleach_DIF_item15_ra'
+
+    if save_fig:
+        plt.savefig('Figures3/'+figname+'.pdf')
+        plt.savefig('Figures3/'+figname+'.jpg')
+        
+        
+        
+        
+        
