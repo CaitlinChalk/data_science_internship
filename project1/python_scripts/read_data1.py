@@ -5,15 +5,16 @@ raw data structure:
 """
 
 import os
+
+os.chdir('C:\\Users\\Caitlin\\Documents\\data_science_internship\\project1\\python_scripts')
+
 import pandas as pd
 import numpy as np
 from RUMM_conversion import convert2RUMM #function to convert structured data to RUMM format
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
 
-os.chdir('M:/LIDA_internship/project1/python_scripts')
-
-data = pd.read_excel('../Rasch_analysis/Data1_Saudi/raw/Saudi_data.xlsx') #read raw data
+data = pd.read_excel('..\\Rasch_analysis\\Data1_Saudi\\raw\\Saudi_data.xlsx') #read raw data
 
 #separate raw data into different components by column name
 #------------------------------------------------------------------------------
@@ -124,7 +125,7 @@ PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
 
 #data of interest: ratings or agreements?
-data_type = "ratings"
+data_type = "agreements"
 if data_type == "ratings":
     data_interest = ratings
 elif data_type == "agreements":
@@ -155,7 +156,7 @@ if len(facets_of_interest) < len(facets_key): #if some facets have been removed
 
 misfit_ID = []
 
-misfits = True #true if ID of misfitting people is included, to remove from the analysis
+misfits = False #true if ID of misfitting people is included, to remove from the analysis
 
 if misfits:
 
@@ -178,7 +179,7 @@ if misfits:
 
 
 extremes = False #% remove extreme scores (i.e. people that put the same answer for everything) and misfits
-extract = True #extract only the people of interest from a given file
+extract = False #extract only the people of interest from a given file
 
 if extremes:
     data_RUMM, id1, PFs_RUMM, facets_RUMM, extreme_persons = remove_extremes(data_RUMM,id1,PFs_RUMM,facets_RUMM,misfit_ID)
@@ -193,8 +194,8 @@ if extract:
     id1 = id1.iloc[id_extract]
     PFs_RUMM = PFs_RUMM.iloc[id_extract]
     facets_RUMM = facets_RUMM.iloc[id_extract]
-    id_rating = id1.copy()
-    
+    #id_rating = id1.copy()
+    #id_agree = id1.copy()
 #% rescore data
 
 rescore = False
@@ -383,7 +384,7 @@ if PFs_RUMM.ndim > 1:
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, data_RUMM], axis=1)
     #RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
     RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
@@ -413,7 +414,10 @@ with pd.ExcelWriter(name) as writer:
 
 #%% output removed person ids to excel file
 
-write_misfits = False
+write_misfits = True
+
+data_ra = pd.read_excel('..\\Rasch_analysis\\Data1_Saudi\\rating_questions\\all_person_locations.xlsx')
+data_ag = pd.read_excel('..\\Rasch_analysis\\Data1_Saudi\\agreement_questions\\all_person_locations.xlsx')
 
 if write_misfits:
     
@@ -421,14 +425,17 @@ if write_misfits:
     agreement_removed_id = id_original[~id_original.isin(id_agree)]
     both_removed_id = rating_removed_id[rating_removed_id.isin(agreement_removed_id)]
     
-    files_out = [rating_removed_id,agreement_removed_id,both_removed_id]
+    loc_ra = data_ra['Location'][data_ra['personID'].isin(rating_removed_id)] 
+    loc_ag = data_ag['Location'][data_ag['personID'].isin(agreement_removed_id)] 
+    
+    files_out = [rating_removed_id,loc_ra,agreement_removed_id,loc_ag,both_removed_id]
 
     for i in range(len(files_out)):
         new_index = list(range(len(files_out[i])))
         index_dict = dict(zip(files_out[i].index,new_index))
         files_out[i].rename(index_dict,inplace=True)
 
-    id_out = pd.concat([rating_removed_id,agreement_removed_id,both_removed_id],axis=1,ignore_index=True)
+    id_out = pd.concat([rating_removed_id,loc_ra,agreement_removed_id,loc_ag,both_removed_id],axis=1,ignore_index=True)
 
     with pd.ExcelWriter('misfitting_people.xlsx') as writer:
         id_out.to_excel(writer, index=None, header=False)
