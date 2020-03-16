@@ -4,11 +4,14 @@ raw data structure:
     usual brand, laundry habits, misc opinions (inc overall rating), ratings, agreements, attitudes, Person Factors
 """
 
+import os
 import pandas as pd
 import numpy as np
 from RUMM_conversion import convert2RUMM #function to convert structured data to RUMM format
 from data_manipulation import remove_text
 from data_manipulation import remove_extremes
+
+os.chdir('M:/LIDA_internship/project1/python_scripts')
 
 data = pd.read_excel('../Rasch_analysis/Data1_Saudi/raw/Saudi_data.xlsx') #read raw data
 
@@ -49,10 +52,19 @@ c4 = "Employment Of Respondent"
 c5 = "Size Of Household"
 c6 = "Number Of Children In Household Under 16"
 c7 = "Monthly Household Income"
-person_factors = data.loc[:,[c4,c6]]
-
+c8 = "How Usually Wash Laundry"
+c9 = "Type Of Main Washing Machine"
+c10 = "Number Of Times Per Week Wash In Washing Machine"
+c11 = "Type Of Laundry Detergent Usually Use"
+c12 = "How Much Scent Like On Laundry"
+c13 = "Whether Usually Use Fabric Softener - Personal"
+c14 = "Whether Usually Use Liquid Bleach - Personal"
+person_factors = data.loc[:,[c8,c9,c10,c11,c12,c13,c14]]
+#person_factors = usual_ratings.copy()
+#person_factors = data['Whether Bought Currently Used Laundry Detergent Before']
 #person ID
 id1 = data.loc[:,"Respondent Serial"]
+id_original = id1.copy()
 #%
 del data
 
@@ -112,7 +124,7 @@ PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
 
 #data of interest: ratings or agreements?
-data_type = "agreements"
+data_type = "ratings"
 if data_type == "ratings":
     data_interest = ratings
 elif data_type == "agreements":
@@ -181,6 +193,7 @@ if extract:
     id1 = id1.iloc[id_extract]
     PFs_RUMM = PFs_RUMM.iloc[id_extract]
     facets_RUMM = facets_RUMM.iloc[id_extract]
+    id_rating = id1.copy()
     
 #% rescore data
 
@@ -217,7 +230,7 @@ if delete_items:
     #agreements_RUMM.drop(columns=col, inplace=True)
 #id_new.drop(id_new.index[k], axis=0, inplace=True)
 
-#%% product manipulations
+#% product manipulations
     
 #% remove facets
 facets_of_interest = np.array([1,2,3,4,5,6,7,8,9,10]) #list of facets of interest
@@ -370,7 +383,7 @@ if PFs_RUMM.ndim > 1:
     
 if len(facets_of_interest) > 1 and combination == False: #multifacet analysis
     #RUMM_ratings = pd.concat([id1, id1, facets_RUMM, ratings_RUMM], axis=1)
-    RUMM_data = pd.concat([id1, facets_RUMM, data_RUMM], axis=1)
+    RUMM_data = pd.concat([id1, PFs_RUMM, data_RUMM], axis=1)
     #RUMM_agreements = pd.concat([id1, facets_RUMM, agreements_RUMM], axis=1)
 
     RUMM_data_key = pd.concat([PFs_key, data_key], axis=1) 
@@ -398,9 +411,28 @@ with pd.ExcelWriter(name) as writer:
 #    RUMM_agreements.to_excel(writer, sheet_name = 'data', index=None, header=False)
 #    RUMM_agreements_key.to_excel(writer, sheet_name = 'key')
 
+#%% output removed person ids to excel file
 
+write_misfits = False
 
+if write_misfits:
+    
+    rating_removed_id = id_original[~id_original.isin(id_rating)]
+    agreement_removed_id = id_original[~id_original.isin(id_agree)]
+    both_removed_id = rating_removed_id[rating_removed_id.isin(agreement_removed_id)]
+    
+    files_out = [rating_removed_id,agreement_removed_id,both_removed_id]
 
+    for i in range(len(files_out)):
+        new_index = list(range(len(files_out[i])))
+        index_dict = dict(zip(files_out[i].index,new_index))
+        files_out[i].rename(index_dict,inplace=True)
+
+    id_out = pd.concat([rating_removed_id,agreement_removed_id,both_removed_id],axis=1,ignore_index=True)
+
+    with pd.ExcelWriter('misfitting_people.xlsx') as writer:
+        id_out.to_excel(writer, index=None, header=False)
+    
 
 
 

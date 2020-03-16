@@ -55,17 +55,18 @@ def convert2RUMM (data_old,id1):
             counts = unique_list[1]
             response_list = response_list0[~pd.isnull(response_list0)] #remove NaNs 
             counts = counts[~pd.isnull(response_list0)]  
-            if j == 0:
-                response_dict = {} #initialise dictionary 
-                response_key = {}   #initialise key        
+            #if j == 0:
+            response_dict = {} #initialise dictionary 
+            response_key = {}   #initialise key        
             for i in range(len(response_list)):
-                if not response_list[i] in response_dict:
-                    key = len(response_dict)
-                    response_dict[response_list[i]] = key #create dictionary to redefine responses as integers (for reference purposes)
-                    if id1 == 0: #no text has been removed
-                        response_key[key] = str(response_list[i])  + ' ' + '(' + str(counts[i]) + ')'
-                    else: #text has been removed
-                        response_key[key] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
+            #if not response_list[i] in response_dict:
+                #key = len(response_dict)
+                key = i
+                response_dict[response_list[i]] = key #create dictionary to redefine responses as integers (for reference purposes)
+                if id1 == 0: #no text has been removed
+                    response_key[key] = str(response_list[i])  + ' ' + '(' + str(counts[i]) + ')'
+                else: #text has been removed
+                    response_key[key] = str(original_key[response_list[i]])  + ' ' + '(' + str(counts[i]) + ')' 
                     
             data_RUMM.iloc[:,j].replace(response_dict, inplace=True) #replace responses in data frame column with the corresponding integers
             Series0 = pd.Series(response_key,name=data_old.columns[j]) #create series for each column of data           

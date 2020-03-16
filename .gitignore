@@ -8,7 +8,10 @@ Leeds Introductory Rasch Course (files)/
 literature/
 Figures/
 Figures2/
+Figures3/
 longitudinal_data/
 Data2_Shaving/
 *.docx
 python_training/
+__pycache__/
+Thumbs.db
