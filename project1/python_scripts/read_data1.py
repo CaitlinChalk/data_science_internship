@@ -125,7 +125,7 @@ PFs_RUMM = PFs_RUMM.astype(int) #ensure integer values
 
 
 #data of interest: ratings or agreements?
-data_type = "agreements"
+data_type = "ratings"
 if data_type == "ratings":
     data_interest = ratings
 elif data_type == "agreements":
@@ -418,7 +418,7 @@ write_misfits = True
 
 data_ra = pd.read_excel('..\\Rasch_analysis\\Data1_Saudi\\rating_questions\\all_person_locations.xlsx')
 data_ag = pd.read_excel('..\\Rasch_analysis\\Data1_Saudi\\agreement_questions\\all_person_locations.xlsx')
-
+#%% write misfitting people to file
 if write_misfits:
     
     rating_removed_id = id_original[~id_original.isin(id_rating)]
@@ -427,23 +427,97 @@ if write_misfits:
     
     loc_ra = data_ra['Location'][data_ra['personID'].isin(rating_removed_id)] 
     loc_ag = data_ag['Location'][data_ag['personID'].isin(agreement_removed_id)] 
+    fr_ra = data_ra['FitResid'][data_ra['personID'].isin(rating_removed_id)] 
+    fr_ag = data_ag['FitResid'][data_ag['personID'].isin(agreement_removed_id)] 
     
-    files_out = [rating_removed_id,loc_ra,agreement_removed_id,loc_ag,both_removed_id]
+    files_out = [rating_removed_id,loc_ra,fr_ra,agreement_removed_id,loc_ag,fr_ag,both_removed_id]
 
     for i in range(len(files_out)):
         new_index = list(range(len(files_out[i])))
         index_dict = dict(zip(files_out[i].index,new_index))
         files_out[i].rename(index_dict,inplace=True)
 
-    id_out = pd.concat([rating_removed_id,loc_ra,agreement_removed_id,loc_ag,both_removed_id],axis=1,ignore_index=True)
+    id_out = pd.concat([rating_removed_id,loc_ra,fr_ra,agreement_removed_id,loc_ag,fr_ag,both_removed_id],axis=1,ignore_index=True)
 
     with pd.ExcelWriter('misfitting_people.xlsx') as writer:
         id_out.to_excel(writer, index=None, header=False)
+                
+#%% plot misfitting people to illustrate why they were removed 
+
+plot_misfits = True
+save_fig = False
+
+if plot_misfits:
     
+    import matplotlib.pyplot as plt
+    
+    misfits = pd.read_excel('misfitting_people.xlsx',header=None)
+    id_ra = misfits[0]
+    id_ag = misfits[3]
+    
+    loc_ra = misfits[1]
+    loc_ag = misfits[4]
+    
+    fr_ra = misfits[2]
+    fr_ag = misfits[5]
+        
+    #remove extremes
+    fr_ra2 = fr_ra[fr_ra!='...']
+    id_ra2 = id_ra[fr_ra2.index]
+    loc_ra2 = loc_ra[fr_ra2.index]
+    
+    fr_ag2 = fr_ag[fr_ag!='...']
+    id_ag2 = id_ag[fr_ag2.index]
+    loc_ag2 = loc_ag[fr_ag2.index]
+
+    #original data
+    ratings_new = ratings.copy()
+    agreements_new = agreements.copy()
+    ratings_key = remove_text(ratings_new)
+    agreements_key = remove_text(agreements_new)
+    
+    ratings1 = ratings_new[id_original.isin(id_ra)]
+    agreements1 = agreements_new[id_original.isin(id_ag)]
+    ratings2 = ratings_new[id_original.isin(id_ra2)]
+    agreements2 = agreements_new[id_original.isin(id_ag2)]
+    
+    #rescore agreements resonses to coincide with ratings
+    agreements2.replace(2,100,inplace=True)
+    agreements2.replace(1,75,inplace=True)
+    agreements2.replace(0,50,inplace=True)
+    agreements2.replace(-1,25,inplace=True)
+    agreements2.replace(-2,0,inplace=True)
+
+    sd_ra = ratings2.std(axis=1)
+    sd_ag = agreements2.std(axis=1)
+   
+    fig,ax = plt.subplots(2)
+    ax[0].plot(loc_ra2,fr_ra2,'o')
+    ax[1].plot(loc_ag2,fr_ag2,'o')
+    
+    for label,x,y in zip(sd_ra,loc_ra2,fr_ra2):
+            if (label>25): #& (label0==0):
+                ax[0].plot(x,y,'o',color='red')
+                
+    for label,x,y in zip(sd_ag,loc_ag2,fr_ag2):
+            if (label>25): #& (label0==0):
+                ax[1].plot(x,y,'o',color='red')
 
 
+    ax[1].set_xlabel('Person location (logits)',FontSize=12)
+    ax[1].set_ylabel('Fit residual',FontSize=12)
+    ax[0].set_title('Ratings analysis',FontSize=12)
+    ax[1].set_title('Agreements analysis',FontSize=12)
+    
+    ax[1].legend(['Low raw score SD','High raw score SD'])
+    
+    plt.tight_layout()
 
+    figname = 'misfits'
 
+    if save_fig:
+        plt.savefig(figname+'.pdf')
+        plt.savefig(figname+'.jpg')
 
 
 
