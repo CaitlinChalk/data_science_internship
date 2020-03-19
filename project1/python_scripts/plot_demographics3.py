@@ -5,12 +5,14 @@ Created on Tue Dec 10 10:51:27 2019
 @author: matcc
 """
 import os
+
+os.chdir('C:\\Users\\Caitlin\\Documents\\data_science_internship\\project1\\python_scripts')
+
 import pandas as pd
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-os.chdir('M:/LIDA_internship/project1/python_scripts')
 
 data1 = pd.read_excel('../Rasch_analysis/Data1_Saudi/extra_PFs/ratings_results_purchase_history.xlsx') #read raw data
 data2 = pd.read_excel('../Rasch_analysis/Data1_Saudi/extra_PFs/agreements_results_purchase_history.xlsx') #read raw data
@@ -117,7 +119,7 @@ if save_fig:
 #agreements
 save_fig = True
 rating = False
-performance = False
+performance = True
 distinctiveness = False
 value = False
 history = False
@@ -169,7 +171,7 @@ if performance:
     ax.plot(loc3,score3,'-*',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 8',FontSize=12)
-    ax.set_title('This product gives the right level of suds throughout the wash (p = 0.0037)',FontSize=12)
+    ax.set_title('This product gives the right level of suds throughout the wash (p = 0.0037)',FontSize=11)
     ax.legend(['Perf. vs expec.: Much better','Perf. vs expec.: A little better','Perf. vs expec.: About the same'],prop={"size":12},loc='lower right')
 
     figname = 'performance_DIF_item8'
@@ -370,7 +372,7 @@ intent_ra = False
 wash_ra = False
 machine_ra = False
 scents_ra = False
-bleach_ra = True
+bleach_ra = False
 
 #overall rating
 if rating_ra:
@@ -497,7 +499,8 @@ if wash_ra:
     ax.plot(loc2,score2,'-s',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 15',FontSize=12)
-    ax.set_title('Rating for being gentle and safe on clothes and sensitive skin (p = 0.027)',FontSize=12)
+    #ax.set_title('Rating for being gentle and safe on clothes and sensitive skin (p = 0.027)',FontSize=12)
+    ax.set_title('p = 0.027',FontSize=12)
     ax.legend(['Usual wash: Hand and machine wash','Usual wash: Machine wash only'],prop={"size":10},loc='lower right')
 
     figname = 'wash_DIF_item15_ra'
@@ -571,8 +574,9 @@ if bleach_ra:
     ax.plot(loc2,score2,'-s',linewidth=3)
     ax.set_xlabel('Person location (logits)',FontSize=12)
     ax.set_ylabel('Expected score for Item 15',FontSize=12)
-    ax.set_title('Rating for being gentle and safe on clothes and sensitive skin  (p = 0.021)',FontSize=12)
-    ax.legend(['Use liquid bleach: yes','Use liquid bleach: no'],prop={"size":12})
+    #ax.set_title('Rating for being gentle and safe on clothes and sensitive skin  (p = 0.021)',FontSize=12)
+    ax.set_title('p = 0.021',FontSize=12)
+    ax.legend(['Use liquid bleach: yes','Use liquid bleach: no'],prop={"size":12},loc='lower right')
 
     figname = 'bleach_DIF_item15_ra'
 
