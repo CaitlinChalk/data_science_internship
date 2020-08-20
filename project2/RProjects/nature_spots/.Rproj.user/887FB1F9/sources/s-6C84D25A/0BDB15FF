@@ -1,0 +1,24 @@
+{
+    "id": "0BDB15FF",
+    "path": "C:/Work/data_science_internship/project2/RProjects/nature_spots/scripts/data_wrangle.R",
+    "project_path": "scripts/data_wrangle.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": true,
+    "created": 1597950071553.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "96,0",
+        "scrollLine": "66"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1597950617,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1597954346126,
+    "read_only": false,
+    "read_only_alternatives": []
+}
